@@ -13,17 +13,18 @@ struct Swapchain {
             .add_image_usage_flags((VkImageUsageFlags)vk::ImageUsageFlagBits::eTransferDst);
         // execute builder
         vkb::Swapchain swapchainVkb = swapchainBuilder.build().value();
-        std::vector<VkImage> swapchainImagesVkb = swapchainVkb.get_images().value();
-        std::vector<VkImageView> swapchainImageViewsVkb = swapchainVkb.get_image_views().value();
-        swapchainExtent = vk::Extent2D(swapchainVkb.extent);
-        swapchainFormat = vk::Format(swapchainVkb.image_format);
+        std::vector<VkImage> imagesVkb = swapchainVkb.get_images().value();
+        std::vector<VkImageView> imageViewsVkb = swapchainVkb.get_image_views().value();
+        extent = vk::Extent2D(swapchainVkb.extent);
+        format = vk::Format(swapchainVkb.image_format);
         swapchain = vk::raii::SwapchainKHR(device, swapchainVkb);
-        swapchainImages = swapchain.getImages();
-        for (uint32_t i = 0; i < swapchainVkb.image_count; i++) swapchainImageViews.emplace_back(device, swapchainImageViewsVkb[i]);
+        images = swapchain.getImages();
+        for (uint32_t i = 0; i < swapchainVkb.image_count; i++) imageViews.emplace_back(device, imageViewsVkb[i]);
     }
+
     vk::raii::SwapchainKHR swapchain = nullptr;
-    std::vector<vk::raii::ImageView> swapchainImageViews;
-    std::vector<vk::Image> swapchainImages;
-    vk::Extent2D swapchainExtent;
-    vk::Format swapchainFormat;
+    std::vector<vk::raii::ImageView> imageViews;
+    std::vector<vk::Image> images;
+    vk::Extent2D extent;
+    vk::Format format;
 };

@@ -67,7 +67,7 @@ struct Engine {
         // VkBootstrap: create command queues
         queues.init(device, deviceVkb);
         // Vulkan: create command buffers
-        renderer.init(alloc, device, queues);
+        renderer.init(device, alloc, queues);
     }
     void run() {
         bRunning = true;
@@ -76,9 +76,10 @@ struct Engine {
             SDL_Event event;
             while (SDL_PollEvent(&event)) handle_event(event);
 
-            if (bRendering) draw();
+            if (bRendering) renderer.draw(device, swapchain, queues);
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
+        device.waitIdle();
     }
 
 private:
@@ -89,9 +90,6 @@ private:
             case SDL_EventType::SDL_EVENT_WINDOW_RESTORED: bRendering = true; break;
             default: break;
         }
-    }
-    void draw() {
-        framecount++;
     }
 
 private:
@@ -107,5 +105,4 @@ private:
 
     bool bRunning;
     bool bRendering;
-    uint64_t framecount = 0;
 };
