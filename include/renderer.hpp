@@ -7,6 +7,7 @@
 //
 #include "queues.hpp"
 #include "swapchain.hpp"
+#include "utils.hpp"
 
 struct Renderer {
     void init(vk::raii::Device& device, vma::Allocator& alloc, Queues& queues) {
@@ -39,12 +40,10 @@ struct Renderer {
         FrameData& frame = frames[iFrame++ % FRAME_OVERLAP];
 
         // wait for this frame's fence to be signaled and reset it
-        while(vk::Result::eTimeout == device.waitForFences({ *frame.renderFence }, vk::True, 1000000000)) {
-            fmt::println("Timeout on render fence");
-        }
+        while(vk::Result::eTimeout == device.waitForFences({ *frame.renderFence }, vk::True, 1000000000)) {}
         device.resetFences({ *frame.renderFence});
 
-        // acquire image from swapchain (TODO: move this into swapchain)
+        // acquire image from swapchain
         auto [result, index] = swapchain.swapchain.acquireNextImage(1000000000, *frame.swapchainSemaphore);
         switch(result) {
             case vk::Result::eSuboptimalKHR: fmt::println("Suboptimal swapchain image acquisition"); break;
@@ -55,39 +54,18 @@ struct Renderer {
         }
 
         // restart command buffer
-        const vk::CommandBuffer& cmd = *frame.commandBuffer;
+        vk::raii::CommandBuffer& cmd = frame.commandBuffer;
         cmd.reset();
         vk::CommandBufferBeginInfo cmdBeginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         cmd.begin(cmdBeginInfo);
 
-        // transition swapchain image layout (TODO: move this into swapchain)
-        vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)
-            .setBaseMipLevel(0).setLevelCount(vk::RemainingMipLevels)
-            .setBaseArrayLayer(0).setLayerCount(vk::RemainingArrayLayers);
-        vk::ImageMemoryBarrier2 imageBarrier = vk::ImageMemoryBarrier2()
-            .setSrcStageMask(vk::PipelineStageFlagBits2::eAllCommands)
-            .setSrcAccessMask(vk::AccessFlagBits2::eColorAttachmentWrite)
-            .setDstStageMask(vk::PipelineStageFlagBits2::eAllCommands)
-            .setDstAccessMask(vk::AccessFlagBits2::eColorAttachmentRead)
-            .setOldLayout(vk::ImageLayout::eUndefined)
-            .setNewLayout(vk::ImageLayout::eGeneral) // TODO: change properly
-            .setSubresourceRange(range)
-            .setImage(swapchain.images[index]);
-        vk::DependencyInfo depInfo = vk::DependencyInfo()
-            .setImageMemoryBarrierCount(1)
-            .setImageMemoryBarriers(imageBarrier);
-        cmd.pipelineBarrier2(depInfo);
-
-        // clear swapchain image (TODO: move into swapchain)
+        // clear swapchain image
+        utils::transition_layout(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
         vk::ClearColorValue clearColor = vk::ClearColorValue(0.5f, 0.0f, 0.0f, 1.0f);
-        clearColor.setFloat32({0.5f, 0.0f, 0.0f, 1.0f});
-        cmd.clearColorImage(swapchain.images[index], vk::ImageLayout::eGeneral, clearColor, range);
+        cmd.clearColorImage(swapchain.images[index], vk::ImageLayout::eGeneral, clearColor, utils::default_subresource_range());
 
-        // transition swapchain image layout again (TODO: move this into swapchain)
-        imageBarrier.setOldLayout(vk::ImageLayout::eGeneral).setNewLayout(vk::ImageLayout::ePresentSrcKHR); // TODO: set proper old layout
-        depInfo.setImageMemoryBarriers(imageBarrier);
-        cmd.pipelineBarrier2(depInfo);
+        // finalize swapchain image
+        utils::transition_layout(cmd, swapchain.images[index], vk::ImageLayout::eGeneral, vk::ImageLayout::ePresentSrcKHR);
         cmd.end();
 
         // submit command buffer to graphics queue
@@ -99,11 +77,8 @@ struct Renderer {
         vk::SemaphoreSubmitInfo signalInfo = vk::SemaphoreSubmitInfo(waitInfo)
             .setSemaphore(*frame.renderSemaphore)
             .setStageMask(vk::PipelineStageFlagBits2::eAllGraphics);
-        vk::CommandBufferSubmitInfo cmdSubmitInfo(cmd);
-        vk::SubmitInfo2 submitInfo = vk::SubmitInfo2()
-            .setWaitSemaphoreInfos(waitInfo)
-            .setSignalSemaphoreInfos(signalInfo)
-            .setCommandBufferInfos(cmdSubmitInfo);
+        vk::CommandBufferSubmitInfo cmdSubmitInfo(*cmd);
+        vk::SubmitInfo2 submitInfo = vk::SubmitInfo2({}, waitInfo, cmdSubmitInfo, signalInfo);
         queues.graphics.queue.submit2(submitInfo, *frame.renderFence);
 
         // present swapchain image
