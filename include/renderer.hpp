@@ -59,23 +59,30 @@ struct Renderer {
         cmd.begin(cmdBeginInfo);
 
         // clear swapchain image
-        utils::transition_layout(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+        utils::transition_layout_rw(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
         vk::ClearColorValue clearColor = vk::ClearColorValue(0.5f, 0.0f, 0.0f, 1.0f);
         cmd.clearColorImage(swapchain.images[index], vk::ImageLayout::eGeneral, clearColor, utils::default_subresource_range());
 
+        // TODO: render geometry
+
+        // transition images to write only:
+        // utils::transition_layout_rw(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eAttachmentOptimal);
+        // transition images to read only:
+        // utils::transition_layout_wr(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eReadOnlyOptimal);
+
         // finalize swapchain image
-        utils::transition_layout(cmd, swapchain.images[index], vk::ImageLayout::eGeneral, vk::ImageLayout::ePresentSrcKHR);
+        utils::transition_layout_wr(cmd, swapchain.images[index], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR);
         cmd.end();
 
         // submit command buffer to graphics queue
         vk::SemaphoreSubmitInfo waitInfo = vk::SemaphoreSubmitInfo()
             .setSemaphore(*frame.swapchainSemaphore)
-            .setStageMask(vk::PipelineStageFlagBits2::eColorAttachmentOutput)
+            .setStageMask(vk::PipelineStageFlagBits2::eTransfer)
             .setDeviceIndex(0)
             .setValue(1);
         vk::SemaphoreSubmitInfo signalInfo = vk::SemaphoreSubmitInfo(waitInfo)
             .setSemaphore(*frame.renderSemaphore)
-            .setStageMask(vk::PipelineStageFlagBits2::eAllGraphics);
+            .setStageMask(vk::PipelineStageFlagBits2::eAllCommands);
         vk::CommandBufferSubmitInfo cmdSubmitInfo(*cmd);
         vk::SubmitInfo2 submitInfo = vk::SubmitInfo2({}, waitInfo, cmdSubmitInfo, signalInfo);
         queues.graphics.queue.submit2(submitInfo, *frame.renderFence);
