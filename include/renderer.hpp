@@ -61,7 +61,7 @@ struct Renderer {
         // clear swapchain image
         utils::transition_layout_rw(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
         vk::ClearColorValue clearColor = vk::ClearColorValue(0.5f, 0.0f, 0.0f, 1.0f);
-        cmd.clearColorImage(swapchain.images[index], vk::ImageLayout::eGeneral, clearColor, utils::default_subresource_range());
+        cmd.clearColorImage(swapchain.images[index], vk::ImageLayout::eTransferDstOptimal, clearColor, utils::default_subresource_range());
 
         // TODO: render geometry
 
