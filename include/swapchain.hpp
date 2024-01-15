@@ -12,13 +12,15 @@ struct Swapchain {
             .set_desired_present_mode((VkPresentModeKHR)vk::PresentModeKHR::eFifo)
             .add_image_usage_flags((VkImageUsageFlags)vk::ImageUsageFlagBits::eTransferDst);
         // execute builder
-        vkb::Swapchain swapchainVkb = swapchainBuilder.build().value();
-        std::vector<VkImage> imagesVkb = swapchainVkb.get_images().value();
-        std::vector<VkImageView> imageViewsVkb = swapchainVkb.get_image_views().value();
+        auto build = swapchainBuilder.build();
+        if (!build) fmt::println("VkBootstrap error: {}", build.error().message());
+        
+        vkb::Swapchain swapchainVkb = build.value();
         extent = vk::Extent2D(swapchainVkb.extent);
         format = vk::Format(swapchainVkb.image_format);
         swapchain = vk::raii::SwapchainKHR(device, swapchainVkb);
         images = swapchain.getImages();
+        std::vector<VkImageView> imageViewsVkb = swapchainVkb.get_image_views().value();
         for (uint32_t i = 0; i < swapchainVkb.image_count; i++) imageViews.emplace_back(device, imageViewsVkb[i]);
     }
 

@@ -26,7 +26,9 @@ struct Engine {
             .use_default_debug_messenger()
             .require_api_version(1, 3, 0);
         if (window.use_debug_msg()) builder.request_validation_layers();
-        vkb::Instance instanceVkb = builder.build().value();
+        auto instanceBuild = builder.build();
+        if (!instanceBuild) fmt::println("VkBootstrap error: {}", instanceBuild.error().message());
+        vkb::Instance instanceVkb = instanceBuild.value();
         instance = vk::raii::Instance(context, instanceVkb);
 
         // Vulkan: dynamic dispatcher init 2/3
@@ -35,32 +37,39 @@ struct Engine {
         // SDL: create vulkan surface
         window.init(instance, instanceVkb.debug_messenger);
 
-        // VkBootstrap: select/create device
+        // VkBootstrap: select physical device
         vkb::PhysicalDeviceSelector selector(instanceVkb, *window.surface);
         selector.set_minimum_version(1, 3)
+            .add_required_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
             .set_required_features_13(vk::PhysicalDeviceVulkan13Features()
                 .setDynamicRendering(true)
                 .setSynchronization2(true))
             .set_required_features_12(vk::PhysicalDeviceVulkan12Features()
                 .setBufferDeviceAddress(true)
                 .setDescriptorIndexing(true));
-        vkb::PhysicalDevice physicalDeviceVkb = selector.select().value();
-        vkb::Device deviceVkb = vkb::DeviceBuilder(physicalDeviceVkb).build().value();
+        auto deviceSelection = selector.select();
+        if (!deviceSelection) fmt::println("VkBootstrap error: {}", deviceSelection.error().message());
+        vkb::PhysicalDevice physicalDeviceVkb = deviceSelection.value();
         physDevice = vk::raii::PhysicalDevice(instance, physicalDeviceVkb);
+
+        // VkBootstrap: create device
+        auto deviceBuilder = vkb::DeviceBuilder(physicalDeviceVkb).build();
+        if (!deviceBuilder) fmt::println("VkBootstrap error: {}", deviceBuilder.error().message());
+        vkb::Device deviceVkb = deviceBuilder.value();
         device = vk::raii::Device(physDevice, deviceVkb);
         
         // Vulkan: dynamic dispatcher init 3/3
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
         // VMA: create allocator
-        vma::VulkanFunctions vulkanFuncs(VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr, VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr);
-        vma::AllocatorCreateInfo allocInfo = vma::AllocatorCreateInfo()
-            .setVulkanApiVersion(vk::ApiVersion13)
-            .setPVulkanFunctions(&vulkanFuncs)
-            .setPhysicalDevice(*physDevice)
-            .setInstance(*instance)
-            .setDevice(*device);
-        alloc = vma::createAllocator(allocInfo);
+        // vma::VulkanFunctions vulkanFuncs(VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr, VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr);
+        // vma::AllocatorCreateInfo allocInfo = vma::AllocatorCreateInfo()
+        //     .setVulkanApiVersion(vk::ApiVersion13)
+        //     .setPVulkanFunctions(&vulkanFuncs)
+        //     .setPhysicalDevice(*physDevice)
+        //     .setInstance(*instance)
+        //     .setDevice(*device);
+        // alloc = vma::createAllocator(allocInfo);
 
         // VkBootstrap: create swapchain
         swapchain.init(physDevice, device, window);
