@@ -11,7 +11,6 @@
 
 struct Renderer {
     void init(vk::raii::Device& device, vma::Allocator& alloc, Queues& queues) {
-        
         // Vulkan: create command pools and buffers
         for (uint32_t i = 0; i < FRAME_OVERLAP; i++) {
             vk::CommandPoolCreateInfo poolInfo = vk::CommandPoolCreateInfo()

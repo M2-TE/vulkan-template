@@ -41,6 +41,7 @@ struct Engine {
         vkb::PhysicalDeviceSelector selector(instanceVkb, *window.surface);
         selector.set_minimum_version(1, 3)
             .add_required_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+            .add_required_extension(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)
             .set_required_features_13(vk::PhysicalDeviceVulkan13Features()
                 .setDynamicRendering(true)
                 .setSynchronization2(true))
@@ -62,14 +63,15 @@ struct Engine {
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
         // VMA: create allocator
-        // vma::VulkanFunctions vulkanFuncs(VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr, VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr);
-        // vma::AllocatorCreateInfo allocInfo = vma::AllocatorCreateInfo()
-        //     .setVulkanApiVersion(vk::ApiVersion13)
-        //     .setPVulkanFunctions(&vulkanFuncs)
-        //     .setPhysicalDevice(*physDevice)
-        //     .setInstance(*instance)
-        //     .setDevice(*device);
-        // alloc = vma::createAllocator(allocInfo);
+        vma::VulkanFunctions vulkanFuncs(VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr, VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr);
+        vma::AllocatorCreateInfo allocInfo = vma::AllocatorCreateInfo()
+            .setFlags(vma::AllocatorCreateFlagBits::eBufferDeviceAddress | vma::AllocatorCreateFlagBits::eKhrDedicatedAllocation)
+            .setVulkanApiVersion(vk::ApiVersion13)
+            .setPVulkanFunctions(&vulkanFuncs)
+            .setPhysicalDevice(*physDevice)
+            .setInstance(*instance)
+            .setDevice(*device);
+        alloc = vma::createAllocator(allocInfo);
 
         // VkBootstrap: create swapchain
         swapchain.init(physDevice, device, window);
