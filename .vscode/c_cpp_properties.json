@@ -1,17 +1,38 @@
 {
+    "env": {
+        "myIncludePath": [
+            "${workspaceFolder}/include/**",
+            "${workspaceFolder}/build/_deps/**"
+        ],
+        "myDefines": [
+            "VULKAN_DEBUG_MSG_UTILS",
+            "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC",
+            "VULKAN_HPP_NO_TO_STRING",
+            "VULKAN_HPP_NO_SPACESHIP_OPERATOR",
+            "VMA_DYNAMIC_VULKAN_FUNCTIONS",
+            "VMA_STATIC_VULKAN_FUNCTIONS=0"
+        ]
+    },
     "configurations": [
         {
             "name": "Linux",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++23",
+            "configurationProvider": "ms-vscode.cmake-tools",
             "intelliSenseMode": "linux-clang-x64",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+        },
+        {
+            "name": "Win32",
+            "defines": [],
+            "compilerPath": "cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "intelliSenseMode": "windows-msvc-x64"
         }
     ],
-    "version": 4
+    "version": 4,
+    "enableConfigurationSquiggles": true
 }
