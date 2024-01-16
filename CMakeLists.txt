@@ -48,29 +48,44 @@ set(SDL_SENSOR              OFF CACHE BOOL "Disable SDL Sensor subsystem" FORCE)
 set(SDL_LOCALE              ON  CACHE BOOL "Disable SDL Locale subsystem" FORCE)
 set(SDL_MISC                ON  CACHE BOOL "Disable SDL Misc subsystem" FORCE)
 
-
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF) # enable git output for FetchContent steps
 
-# fetch vulkan headers
-FetchContent_Declare(vulkan-hpp GIT_REPOSITORY "https://github.com/KhronosGroup/Vulkan-Hpp.git" GIT_TAG "main" GIT_SHALLOW ON GIT_SUBMODULES "")
-FetchContent_Populate(vulkan-hpp)
-set(VK_BOOTSTRAP_VULKAN_HEADER_DIR "${vulkan-hpp_SOURCE_DIR}/vulkan" CACHE FILEPATH "Specify the location of the Vulkan-Headers include directory." FORCE)
+# fetch vulkan headers alongside glslang
+find_package(Vulkan REQUIRED COMPONENTS glslangValidator)
 # fetch vulkan-related libraries
 FetchContent_Declare(vk-bootstrap GIT_REPOSITORY "https://github.com/charles-lunarg/vk-bootstrap.git" GIT_TAG "main" GIT_SHALLOW ON)
-FetchContent_Declare(vma GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git" GIT_TAG "master" GIT_SHALLOW ON SOURCE_SUBDIR "include/")
-FetchContent_Declare(vma-hpp GIT_REPOSITORY "https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git" GIT_TAG "master" GIT_SHALLOW ON GIT_SUBMODULES "" SOURCE_SUBDIR "include/")
-FetchContent_MakeAvailable(vk-bootstrap vma vma-hpp)
+FetchContent_Declare(vma GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git" GIT_TAG "master" GIT_SHALLOW ON SOURCE_SUBDIR "disabled/")
+FetchContent_Declare(vma-hpp GIT_REPOSITORY "https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git" GIT_TAG "master" GIT_SHALLOW ON GIT_SUBMODULES "" SOURCE_SUBDIR "disabled/")
 # fetch misc libraries
 FetchContent_Declare(sdl3 GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git" GIT_TAG "main" GIT_SHALLOW ON)
 FetchContent_Declare(glm GIT_REPOSITORY "https://github.com/g-truc/glm.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt.git" GIT_TAG "master" GIT_SHALLOW ON)
-FetchContent_MakeAvailable(sdl3 glm fmt)
+FetchContent_Declare(cmrc GIT_REPOSITORY "https://github.com/vector-of-bool/cmrc.git" GIT_TAG "master" GIT_SHALLOW ON)
+FetchContent_MakeAvailable(vk-bootstrap vma vma-hpp sdl3 glm fmt cmrc)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
+# compile GLSL shaders
+file(GLOB_RECURSE GLSL_SOURCE_FILES CONFIGURE_DEPENDS 
+    "${PROJECT_SOURCE_DIR}/shaders/*.vert"
+    "${PROJECT_SOURCE_DIR}/shaders/*.frag"
+    "${PROJECT_SOURCE_DIR}/shaders/*.comp")
+foreach(GLSL ${GLSL_SOURCE_FILES})
+    get_filename_component(FILE_NAME "${GLSL}" NAME)
+    set(SPIRV "${PROJECT_SOURCE_DIR}/build/shaders/${FILE_NAME}.spv")
+    add_custom_command(
+        COMMENT "Compiling shader: ${FILE_NAME}"
+        OUTPUT  "${SPIRV}"
+        COMMAND "${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE}" -V "${GLSL}" -o "${SPIRV}"
+        DEPENDS "${GLSL}")
+    list(APPEND SPIRV_BINARY_FILES "${SPIRV}")
+endforeach(GLSL)
+add_custom_target(compile-shaders DEPENDS "${SPIRV_BINARY_FILES}")
+cmrc_add_resource_library(shaders ALIAS cmrc::shaders "${SPIRV_BINARY_FILES}")
+
 # create executable target
-file(GLOB_RECURSE source-files CONFIGURE_DEPENDS "src/*")
-add_executable(${PROJECT_NAME} "${source-files}")
+file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*")
+add_executable(${PROJECT_NAME} "${SOURCE_FILES}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
     "${vma_SOURCE_DIR}/include/"
@@ -84,8 +99,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     VMA_STATIC_VULKAN_FUNCTIONS=0)
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Headers
+    vk-bootstrap::vk-bootstrap
     SDL3::SDL3
     glm::glm
     fmt::fmt
-    vk-bootstrap::vk-bootstrap
+    cmrc::shaders
     ${CMAKE_DL_LIBS})

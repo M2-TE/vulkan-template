@@ -1,6 +1,8 @@
 #pragma once
 #include <vulkan/vulkan_raii.hpp>
 #include <VkBootstrap.h>
+#include <fmt/base.h>
+//
 #include "window.hpp"
 
 struct Swapchain {

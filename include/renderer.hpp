@@ -2,7 +2,6 @@
 #include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.hpp>
 #include <fmt/base.h>
-// #include <glslang/Public/ShaderLang.h>
 //
 #include <array>
 //
