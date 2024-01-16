@@ -9,7 +9,7 @@ struct Swapchain {
     void init(vk::raii::PhysicalDevice& physDevice, vk::raii::Device& device, Window& window) {
         // create builder
         vkb::SwapchainBuilder swapchainBuilder(*physDevice, *device, *window.surface);
-        swapchainBuilder.set_desired_extent(window.width, window.height)
+        swapchainBuilder.set_desired_extent(window.extent.width, window.extent.height)
             .set_desired_format(vk::SurfaceFormatKHR(vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear))
             .set_desired_present_mode((VkPresentModeKHR)vk::PresentModeKHR::eFifo)
             .add_image_usage_flags((VkImageUsageFlags)vk::ImageUsageFlagBits::eTransferDst);

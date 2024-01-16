@@ -13,5 +13,5 @@ struct Window {
     vk::raii::DebugUtilsMessengerEXT debugMsg = nullptr;
     std::vector<const char*> extensions;
     std::string name = "Vulkan Renderer";
-    int32_t width = 1280, height = 720;
+    vk::Extent2D extent = { 1280, 720 };
 };

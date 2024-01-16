@@ -17,7 +17,7 @@ Window::Window() {
     if (SDL_InitSubSystem(SDL_InitFlags::SDL_INIT_VIDEO)) fmt::println("{}", SDL_GetError());
 
     // SDL: create window
-    pWindow = SDL_CreateWindow(name.c_str(), width, height, SDL_WINDOW_VULKAN);
+    pWindow = SDL_CreateWindow(name.c_str(), extent.width, extent.height, SDL_WINDOW_VULKAN);
     if (pWindow == nullptr) fmt::println("{}", SDL_GetError());
     
     // SDL: query required extensions
