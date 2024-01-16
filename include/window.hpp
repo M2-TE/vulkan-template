@@ -1,5 +1,7 @@
 #pragma once
+#include <vulkan/vulkan_raii.hpp>
 
+class SDL_Window; // forward declared
 struct Window {
     Window();
     ~Window();
@@ -8,8 +10,8 @@ struct Window {
 
     SDL_Window* pWindow;
     vk::raii::SurfaceKHR surface = nullptr;
+    vk::raii::DebugUtilsMessengerEXT debugMsg = nullptr;
     std::vector<const char*> extensions;
     std::string name = "Vulkan Renderer";
     int32_t width = 1280, height = 720;
-    vk::raii::DebugUtilsMessengerEXT debugMsg = nullptr;
 };
