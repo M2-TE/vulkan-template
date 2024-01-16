@@ -15,24 +15,25 @@
     },
     "configurations": [
         {
-            "name": "Linux",
-            "defines": [],
-            "cStandard": "c17",
-            "cppStandard": "c++23",
-            "configurationProvider": "ms-vscode.cmake-tools",
-            "intelliSenseMode": "linux-clang-x64",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
-        },
-        {
             "name": "Win32",
-            "defines": [],
+            "defines": ["${myDefines}"],
+            "includePath": ["${myIncludePath}"],
             "compilerPath": "cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++23",
             "configurationProvider": "ms-vscode.cmake-tools",
             "intelliSenseMode": "windows-msvc-x64"
+        },
+        {
+            "name": "Linux",
+            "defines": ["${myDefines}"],
+            "includePath": ["${myIncludePath}"],
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "intelliSenseMode": "linux-clang-x64",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
         }
     ],
-    "version": 4,
-    "enableConfigurationSquiggles": true
+    "version": 4
 }
