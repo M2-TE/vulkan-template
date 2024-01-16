@@ -1,8 +1,7 @@
 {
     "env": {
         "myIncludePath": [
-            "${workspaceFolder}/include/**",
-            "${workspaceFolder}/build/_deps/**"
+            "${workspaceFolder}/**"
         ],
         "myDefines": [
             "VULKAN_DEBUG_MSG_UTILS",
@@ -32,7 +31,7 @@
             "cppStandard": "c++23",
             "configurationProvider": "ms-vscode.cmake-tools",
             "intelliSenseMode": "linux-clang-x64",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
     "version": 4

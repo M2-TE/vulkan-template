@@ -10,39 +10,43 @@
 #include "utils.hpp"
 
 struct Image {
-    Image(vk::raii::Device& device, vma::Allocator& alloc, 
+    Image() = default;
+    Image(vk::raii::Device& device, vma::UniqueAllocator& alloc, 
             vk::Extent3D extent, vk::Format format, 
-            vk::ImageAspectFlags aspects = vk::ImageAspectFlagBits::eColor) 
+            vk::ImageUsageFlags usage, vk::ImageAspectFlags aspects)
                 : extent(extent), format(format) {
         // create image
         vk::ImageCreateInfo imageInfo = vk::ImageCreateInfo()
-            .setImageType(vk::ImageType::e2D)
-            .setFormat(format)
-            .setExtent(extent)
-            .setMipLevels(1)
-            .setArrayLayers(1)
             .setSamples(vk::SampleCountFlagBits::e1)
             .setTiling(vk::ImageTiling::eOptimal)
-            .setUsage(vk::ImageUsageFlagBits::eColorAttachment);
-        image = device.createImage(imageInfo);
+            .setImageType(vk::ImageType::e2D)
+            .setFormat(format).setExtent(extent)
+            .setMipLevels(1).setArrayLayers(1)
+            .setUsage(usage);
+        vma::AllocationCreateInfo allocInfo = vma::AllocationCreateInfo()
+            .setUsage(vma::MemoryUsage::eAutoPreferDevice)
+            .setRequiredFlags(vk::MemoryPropertyFlagBits::eDeviceLocal);
+        std::tie(image, allocation) = alloc->createImageUnique(imageInfo, allocInfo);
+        
         // create image view
         vk::ImageViewCreateInfo viewInfo = vk::ImageViewCreateInfo()
             .setViewType(vk::ImageViewType::e2D)
-            .setImage(*image)
-            .setFormat(format)
-            .setSubresourceRange(vk::ImageSubresourceRange(aspects, 0, 1, 0, 1));
+            .setImage(*image).setFormat(format)
+            .setSubresourceRange(vk::ImageSubresourceRange(aspects, 
+                0, vk::RemainingMipLevels, 
+                0, vk::RemainingArrayLayers));
         view = device.createImageView(viewInfo);
     }
 
-    vk::raii::Image image = nullptr;
+    vma::UniqueImage image;
+    vma::UniqueAllocation allocation;
     vk::raii::ImageView view = nullptr;
-    vma::Allocation allocation;
     vk::Extent3D extent;
     vk::Format format;
 };
 
 struct Renderer {
-    void init(vk::raii::Device& device, vma::Allocator& alloc, Queues& queues) {
+    void init(vk::raii::Device& device, vma::UniqueAllocator& alloc, Queues& queues) {
         // Vulkan: create command pools and buffers
         for (uint32_t i = 0; i < FRAME_OVERLAP; i++) {
             vk::CommandPoolCreateInfo poolInfo = vk::CommandPoolCreateInfo()
@@ -66,6 +70,9 @@ struct Renderer {
             vk::FenceCreateInfo fenceInfo = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
             frames[i].renderFence = device.createFence(fenceInfo);
         }
+        
+        vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage;
+        image = Image(device, alloc, vk::Extent3D(512, 512, 1), vk::Format::eR16G16B16A16Sfloat, usage, vk::ImageAspectFlagBits::eColor);
     }
     void draw(vk::raii::Device& device, Swapchain& swapchain, Queues& queues) {
         FrameData& frame = frames[iFrame++ % FRAME_OVERLAP];
@@ -89,6 +96,8 @@ struct Renderer {
         cmd.reset();
         vk::CommandBufferBeginInfo cmdBeginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         cmd.begin(cmdBeginInfo);
+
+        shenanigans(device, cmd);
 
         // clear swapchain image
         utils::transition_layout_rw(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
@@ -129,6 +138,10 @@ struct Renderer {
     }
 
 private:
+    void shenanigans(vk::raii::Device& device, vk::raii::CommandBuffer& cmd) {
+
+    }
+private:
     struct FrameData {
         // command recording
         vk::raii::CommandPool commandPool = nullptr;
@@ -141,4 +154,6 @@ private:
     static constexpr uint32_t FRAME_OVERLAP = 2;
     std::array<FrameData, FRAME_OVERLAP> frames;
     uint32_t iFrame = 0;
+
+    Image image;
 };

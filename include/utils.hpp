@@ -2,12 +2,8 @@
 #include <vulkan/vulkan_raii.hpp>
 
 namespace utils {
-    inline vk::ImageSubresourceRange& default_subresource_range() {
-        static vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-            .setAspectMask(vk::ImageAspectFlagBits::eColor)
-            .setBaseMipLevel(0).setLevelCount(vk::RemainingMipLevels)
-            .setBaseArrayLayer(0).setLayerCount(vk::RemainingArrayLayers);
-        return range;
+    inline vk::ImageSubresourceRange default_subresource_range() {
+        return vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, vk::RemainingMipLevels, 0, vk::RemainingArrayLayers);
     }
 
     // transition into a write layout (from read)

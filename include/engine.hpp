@@ -70,7 +70,7 @@ struct Engine {
             .setPhysicalDevice(*physDevice)
             .setInstance(*instance)
             .setDevice(*device);
-        alloc = vma::createAllocator(allocInfo);
+        alloc = vma::createAllocatorUnique(allocInfo);
 
         // VkBootstrap: create swapchain
         swapchain.init(physDevice, device, window);
@@ -107,7 +107,7 @@ private:
     vk::raii::Instance instance = nullptr;
     vk::raii::PhysicalDevice physDevice = nullptr;
     vk::raii::Device device = nullptr;
-    vma::Allocator alloc;
+    vma::UniqueAllocator alloc;
     Window window;
     Swapchain swapchain;
     Queues queues;
