@@ -7,7 +7,6 @@
 //
 #include <chrono>
 #include <thread>
-#include <vector>
 //
 #include "window.hpp"
 #include "swapchain.hpp"

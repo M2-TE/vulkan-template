@@ -48,23 +48,32 @@ set(SDL_SENSOR              OFF CACHE BOOL "Disable SDL Sensor subsystem" FORCE)
 set(SDL_LOCALE              ON  CACHE BOOL "Disable SDL Locale subsystem" FORCE)
 set(SDL_MISC                ON  CACHE BOOL "Disable SDL Misc subsystem" FORCE)
 
+
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF) # enable git output for FetchContent steps
-find_package(Vulkan REQUIRED COMPONENTS glslc glslangValidator glslang shaderc_combined) # TODO: check which glsl compiler we need (glsl -> spir-v -> shader bytecode)
+
+# fetch vulkan headers
+FetchContent_Declare(vulkan-hpp GIT_REPOSITORY "https://github.com/KhronosGroup/Vulkan-Hpp.git" GIT_TAG "main" GIT_SHALLOW ON GIT_SUBMODULES "")
+FetchContent_Populate(vulkan-hpp)
+set(VK_BOOTSTRAP_VULKAN_HEADER_DIR "${vulkan-hpp_SOURCE_DIR}/vulkan" CACHE FILEPATH "Specify the location of the Vulkan-Headers include directory." FORCE)
+# fetch vulkan-related libraries
+FetchContent_Declare(vk-bootstrap GIT_REPOSITORY "https://github.com/charles-lunarg/vk-bootstrap.git" GIT_TAG "main" GIT_SHALLOW ON)
+FetchContent_Declare(vma GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git" GIT_TAG "master" GIT_SHALLOW ON SOURCE_SUBDIR "include/")
+FetchContent_Declare(vma-hpp GIT_REPOSITORY "https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git" GIT_TAG "master" GIT_SHALLOW ON GIT_SUBMODULES "" SOURCE_SUBDIR "include/")
+FetchContent_MakeAvailable(vk-bootstrap vma vma-hpp)
+# fetch misc libraries
 FetchContent_Declare(sdl3 GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git" GIT_TAG "main" GIT_SHALLOW ON)
 FetchContent_Declare(glm GIT_REPOSITORY "https://github.com/g-truc/glm.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt.git" GIT_TAG "master" GIT_SHALLOW ON)
-FetchContent_Declare(vk-bootstrap GIT_REPOSITORY "https://github.com/charles-lunarg/vk-bootstrap.git" GIT_TAG "main" GIT_SHALLOW ON)
-FetchContent_Declare(vma GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git" GIT_TAG "master" GIT_SHALLOW ON)
-FetchContent_Declare(vma-hpp GIT_REPOSITORY "https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git" GIT_TAG "master" GIT_SHALLOW ON GIT_SUBMODULES "" SOURCE_SUBDIR "include/")
-FetchContent_MakeAvailable(sdl3 glm fmt vk-bootstrap vma vma-hpp)
+FetchContent_MakeAvailable(sdl3 glm fmt)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
 # create executable target
 file(GLOB_RECURSE source-files CONFIGURE_DEPENDS "src/*")
 add_executable(${PROJECT_NAME} "${source-files}")
-target_include_directories(${PROJECT_NAME} PRIVATE 
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+    "${vma_SOURCE_DIR}/include/"
     "${vma-hpp_SOURCE_DIR}/include/")
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     VULKAN_DEBUG_MSG_UTILS
@@ -79,5 +88,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     glm::glm
     fmt::fmt
     vk-bootstrap::vk-bootstrap
-    GPUOpen::VulkanMemoryAllocator
     ${CMAKE_DL_LIBS})

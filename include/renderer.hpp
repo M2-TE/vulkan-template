@@ -2,6 +2,7 @@
 #include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.hpp>
 #include <fmt/base.h>
+// #include <glslang/Public/ShaderLang.h>
 //
 #include <array>
 //
@@ -85,7 +86,7 @@ struct Renderer {
             .setStageMask(vk::PipelineStageFlagBits2::eAllCommands);
         vk::CommandBufferSubmitInfo cmdSubmitInfo(*cmd);
         vk::SubmitInfo2 submitInfo = vk::SubmitInfo2({}, waitInfo, cmdSubmitInfo, signalInfo);
-        queues.graphics.queue.submit2(submitInfo, *frame.renderFence);
+        queues.graphics.queue.submit2(submitInfo, *frame.renderFence); // could use transfer queue
 
         // present swapchain image
         vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR()
