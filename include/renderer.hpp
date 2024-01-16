@@ -9,6 +9,38 @@
 #include "swapchain.hpp"
 #include "utils.hpp"
 
+struct Image {
+    Image(vk::raii::Device& device, vma::Allocator& alloc, 
+            vk::Extent3D extent, vk::Format format, 
+            vk::ImageAspectFlags aspects = vk::ImageAspectFlagBits::eColor) 
+                : extent(extent), format(format) {
+        // create image
+        vk::ImageCreateInfo imageInfo = vk::ImageCreateInfo()
+            .setImageType(vk::ImageType::e2D)
+            .setFormat(format)
+            .setExtent(extent)
+            .setMipLevels(1)
+            .setArrayLayers(1)
+            .setSamples(vk::SampleCountFlagBits::e1)
+            .setTiling(vk::ImageTiling::eOptimal)
+            .setUsage(vk::ImageUsageFlagBits::eColorAttachment);
+        image = device.createImage(imageInfo);
+        // create image view
+        vk::ImageViewCreateInfo viewInfo = vk::ImageViewCreateInfo()
+            .setViewType(vk::ImageViewType::e2D)
+            .setImage(*image)
+            .setFormat(format)
+            .setSubresourceRange(vk::ImageSubresourceRange(aspects, 0, 1, 0, 1));
+        view = device.createImageView(viewInfo);
+    }
+
+    vk::raii::Image image = nullptr;
+    vk::raii::ImageView view = nullptr;
+    vma::Allocation allocation;
+    vk::Extent3D extent;
+    vk::Format format;
+};
+
 struct Renderer {
     void init(vk::raii::Device& device, vma::Allocator& alloc, Queues& queues) {
         // Vulkan: create command pools and buffers
@@ -39,11 +71,11 @@ struct Renderer {
         FrameData& frame = frames[iFrame++ % FRAME_OVERLAP];
 
         // wait for this frame's fence to be signaled and reset it
-        while(vk::Result::eTimeout == device.waitForFences({ *frame.renderFence }, vk::True, 1000000000)) {}
+        while(vk::Result::eTimeout == device.waitForFences({ *frame.renderFence }, vk::True, UINT64_MAX)) {}
         device.resetFences({ *frame.renderFence});
 
         // acquire image from swapchain
-        auto [result, index] = swapchain.swapchain.acquireNextImage(1000000000, *frame.swapchainSemaphore);
+        auto [result, index] = swapchain.swapchain.acquireNextImage(UINT64_MAX, *frame.swapchainSemaphore);
         switch(result) {
             case vk::Result::eSuboptimalKHR: fmt::println("Suboptimal swapchain image acquisition"); break;
             case vk::Result::eTimeout: fmt::println("Timeout on swapchain image acquisition"); break;
