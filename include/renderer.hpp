@@ -7,43 +7,8 @@
 //
 #include "queues.hpp"
 #include "swapchain.hpp"
+#include "image.hpp"
 #include "utils.hpp"
-
-struct Image {
-    Image() = default;
-    Image(vk::raii::Device& device, vma::UniqueAllocator& alloc, 
-            vk::Extent3D extent, vk::Format format, 
-            vk::ImageUsageFlags usage, vk::ImageAspectFlags aspects)
-                : extent(extent), format(format) {
-        // create image
-        vk::ImageCreateInfo imageInfo = vk::ImageCreateInfo()
-            .setSamples(vk::SampleCountFlagBits::e1)
-            .setTiling(vk::ImageTiling::eOptimal)
-            .setImageType(vk::ImageType::e2D)
-            .setFormat(format).setExtent(extent)
-            .setMipLevels(1).setArrayLayers(1)
-            .setUsage(usage);
-        vma::AllocationCreateInfo allocInfo = vma::AllocationCreateInfo()
-            .setUsage(vma::MemoryUsage::eAutoPreferDevice)
-            .setRequiredFlags(vk::MemoryPropertyFlagBits::eDeviceLocal);
-        std::tie(image, allocation) = alloc->createImageUnique(imageInfo, allocInfo);
-        
-        // create image view
-        vk::ImageViewCreateInfo viewInfo = vk::ImageViewCreateInfo()
-            .setViewType(vk::ImageViewType::e2D)
-            .setImage(*image).setFormat(format)
-            .setSubresourceRange(vk::ImageSubresourceRange(aspects, 
-                0, vk::RemainingMipLevels, 
-                0, vk::RemainingArrayLayers));
-        view = device.createImageView(viewInfo);
-    }
-
-    vma::UniqueImage image;
-    vma::UniqueAllocation allocation;
-    vk::raii::ImageView view = nullptr;
-    vk::Extent3D extent;
-    vk::Format format;
-};
 
 struct Renderer {
     void init(vk::raii::Device& device, vma::UniqueAllocator& alloc, Queues& queues) {
@@ -125,7 +90,10 @@ struct Renderer {
             .setSemaphore(*frame.renderSemaphore)
             .setStageMask(vk::PipelineStageFlagBits2::eAllCommands);
         vk::CommandBufferSubmitInfo cmdSubmitInfo(*cmd);
-        vk::SubmitInfo2 submitInfo = vk::SubmitInfo2({}, waitInfo, cmdSubmitInfo, signalInfo);
+        vk::SubmitInfo2 submitInfo = vk::SubmitInfo2()
+            .setWaitSemaphoreInfos(waitInfo)
+            .setCommandBufferInfos(cmdSubmitInfo)
+            .setSignalSemaphoreInfos(signalInfo);
         queues.graphics.queue.submit2(submitInfo, *frame.renderFence); // could use transfer queue
 
         // present swapchain image
@@ -139,7 +107,21 @@ struct Renderer {
 
 private:
     void shenanigans(vk::raii::Device& device, vk::raii::CommandBuffer& cmd) {
-
+        return;
+        
+        vk::BlitImageInfo2 blitInfo = vk::BlitImageInfo2()
+            .setRegions(vk::ImageBlit2()
+                .setSrcOffsets({ vk::Offset3D(), vk::Offset3D(image.extent.width, image.extent.height, 1) })
+                .setDstOffsets({ vk::Offset3D(), vk::Offset3D(image.extent.width, image.extent.height, 1) })
+                .setSrcSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1))
+                .setDstSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1)))
+            .setDstImage(*image.image)
+            .setDstImageLayout(vk::ImageLayout::eTransferDstOptimal)
+            .setSrcImage(*image.image)
+            .setDstImageLayout(vk::ImageLayout::eTransferDstOptimal)
+            .setFilter(vk::Filter::eLinear);
+        cmd.blitImage2(blitInfo);
+        // TODO: use copyImage() instead when img and swapchain image match in size
     }
 private:
     struct FrameData {
