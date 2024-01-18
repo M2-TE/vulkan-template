@@ -66,6 +66,7 @@ FetchContent_MakeAvailable(vk-bootstrap vma vma-hpp sdl3 glm fmt cmrc)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
 # compile GLSL shaders
+file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/build/shaders/")
 file(GLOB_RECURSE GLSL_SOURCE_FILES CONFIGURE_DEPENDS 
     "${PROJECT_SOURCE_DIR}/shaders/*.vert"
     "${PROJECT_SOURCE_DIR}/shaders/*.frag"
