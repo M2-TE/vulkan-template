@@ -9,9 +9,9 @@
 #include <thread>
 //
 #include "window.hpp"
-#include "swapchain.hpp"
-#include "queues.hpp"
 #include "renderer.hpp"
+#include "wrappers/swapchain.hpp"
+#include "wrappers/queues.hpp"
 
 struct Engine {
     Engine() {

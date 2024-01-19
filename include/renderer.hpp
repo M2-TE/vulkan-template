@@ -5,10 +5,11 @@
 //
 #include <array>
 //
-#include "queues.hpp"
-#include "swapchain.hpp"
-#include "image.hpp"
 #include "utils.hpp"
+#include "wrappers/queues.hpp"
+#include "wrappers/swapchain.hpp"
+#include "wrappers/image.hpp"
+#include "wrappers/shader.hpp"
 
 struct Renderer {
     void init(vk::raii::Device& device, vma::UniqueAllocator& alloc, Queues& queues) {
@@ -38,6 +39,21 @@ struct Renderer {
         
         vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage;
         image = Image(device, alloc, vk::Extent3D(512, 512, 1), vk::Format::eR16G16B16A16Sfloat, usage, vk::ImageAspectFlagBits::eColor);
+        shader.init(device);
+        shader.create_descriptors(device, image);
+
+        vk::PipelineLayoutCreateInfo layoutInfo = vk::PipelineLayoutCreateInfo()
+            .setSetLayouts(*shader.descSetLayout);
+        layout = device.createPipelineLayout(layoutInfo);
+
+        vk::PipelineShaderStageCreateInfo stageInfo = vk::PipelineShaderStageCreateInfo()
+            .setModule(*shader.shader)
+            .setStage(vk::ShaderStageFlagBits::eCompute)
+            .setPName("main"); // is this needed?
+        vk::ComputePipelineCreateInfo pipeInfo = vk::ComputePipelineCreateInfo()
+            .setLayout(*layout)
+            .setStage(stageInfo);
+        pipeline = device.createComputePipeline(nullptr, pipeInfo);
     }
     void draw(vk::raii::Device& device, Swapchain& swapchain, Queues& queues) {
         FrameData& frame = frames[iFrame++ % FRAME_OVERLAP];
@@ -107,21 +123,26 @@ struct Renderer {
 
 private:
     void shenanigans(vk::raii::Device& device, vk::raii::CommandBuffer& cmd) {
+        utils::transition_layout_rw(cmd, *image.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+
+        cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline);
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, *layout, 0, { *shader.descSet }, {});
+        cmd.dispatch(std::ceil(image.extent.width / 16.0), std::ceil(image.extent.height / 16.0), 1);
+
         return;
-        
+        // when images are different size/format
         vk::BlitImageInfo2 blitInfo = vk::BlitImageInfo2()
             .setRegions(vk::ImageBlit2()
                 .setSrcOffsets({ vk::Offset3D(), vk::Offset3D(image.extent.width, image.extent.height, 1) })
                 .setDstOffsets({ vk::Offset3D(), vk::Offset3D(image.extent.width, image.extent.height, 1) })
                 .setSrcSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1))
                 .setDstSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1)))
-            .setDstImage(*image.image)
-            .setDstImageLayout(vk::ImageLayout::eTransferDstOptimal)
             .setSrcImage(*image.image)
+            .setSrcImageLayout(vk::ImageLayout::eTransferSrcOptimal)
+            .setDstImage(*image.image)
             .setDstImageLayout(vk::ImageLayout::eTransferDstOptimal)
             .setFilter(vk::Filter::eLinear);
         cmd.blitImage2(blitInfo);
-        // TODO: use copyImage() instead when img and swapchain image match in size
     }
 private:
     struct FrameData {
@@ -138,4 +159,7 @@ private:
     uint32_t iFrame = 0;
 
     Image image;
+    Shader shader = Shader("gradient.comp");
+    vk::raii::Pipeline pipeline = nullptr;
+    vk::raii::PipelineLayout layout = nullptr;
 };

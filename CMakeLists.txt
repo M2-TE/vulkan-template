@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.27)
 project(vulkan-renderer LANGUAGES CXX)
 
 # Generic CMake Settings
@@ -24,29 +24,36 @@ set(SDL_TEST_LIBRARY        OFF CACHE BOOL "Build SDL tests" FORCE)
 set(SDL_DISABLE_INSTALL     ON  CACHE BOOL "Disable installation   of SDL3" FORCE)
 set(SDL_DISABLE_UNINSTALL   ON  CACHE BOOL "Disable uninstallation of SDL3" FORCE)
 # SDL Graphics API support
-set(SDL_VULKAN              ON  CACHE BOOL "Enable Vulkan support" FORCE)
-set(SDL_DIRECTX             OFF CACHE BOOL "Enable DirectX support" FORCE)
-set(SDL_OPENGL              OFF CACHE BOOL "Enable OpenGL support" FORCE)
-set(SDL_OPENGLES            OFF CACHE BOOL "Enable OpenGL ES support" FORCE)
+set(SDL_VULKAN     ON  CACHE BOOL "Enable Vulkan support" FORCE)
+set(SDL_DIRECTX    OFF CACHE BOOL "Enable DirectX support" FORCE)
+set(SDL_OPENGL     OFF CACHE BOOL "Enable OpenGL support" FORCE)
+set(SDL_OPENGLES   OFF CACHE BOOL "Enable OpenGL ES support" FORCE)
 # SDL Subsystems
-set(SDL_ATOMIC              OFF CACHE BOOL "Disable SDL Atomic subsystem" FORCE)
-set(SDL_AUDIO               OFF CACHE BOOL "Disable SDL Audio subsystem" FORCE)
-set(SDL_VIDEO               ON  CACHE BOOL "Disable SDL Video subsystem" FORCE)
-set(SDL_RENDER              OFF CACHE BOOL "Disable SDL Render subsystem" FORCE)
-set(SDL_EVENTS              ON  CACHE BOOL "Disable SDL Events subsystem" FORCE)
-set(SDL_JOSTICK             OFF CACHE BOOL "Disable SDL Joystick subsystem" FORCE)
-set(SDL_HAPTIC              OFF CACHE BOOL "Disable SDL Haptic subsystem" FORCE)
-set(SDL_HIDAPI              ON  CACHE BOOL "Disable SDL Hidapi subsystem" FORCE)
-set(SDL_POWER               OFF CACHE BOOL "Disable SDL Power subsystem" FORCE)
-set(SDL_THREADS             ON  CACHE BOOL "Disable SDL Threads subsystem" FORCE)
-set(SDL_TIMERS              OFF CACHE BOOL "Disable SDL Timers subsystem" FORCE)
-set(SDL_FILE                ON  CACHE BOOL "Disable SDL File subsystem" FORCE)
-set(SDL_LOADSO              ON  CACHE BOOL "Disable SDL Loadso subsystem" FORCE)
-set(SDL_CPUINFO             OFF CACHE BOOL "Disable SDL CPUinfo subsystem" FORCE)
-set(SDL_FILESYSTEM          ON  CACHE BOOL "Disable SDL Filesystem subsystem" FORCE)
-set(SDL_SENSOR              OFF CACHE BOOL "Disable SDL Sensor subsystem" FORCE)
-set(SDL_LOCALE              ON  CACHE BOOL "Disable SDL Locale subsystem" FORCE)
-set(SDL_MISC                ON  CACHE BOOL "Disable SDL Misc subsystem" FORCE)
+set(SDL_ATOMIC     OFF CACHE BOOL "Disable SDL Atomic subsystem" FORCE)
+set(SDL_AUDIO      OFF CACHE BOOL "Disable SDL Audio subsystem" FORCE)
+set(SDL_VIDEO      ON  CACHE BOOL "Disable SDL Video subsystem" FORCE)
+set(SDL_RENDER     OFF CACHE BOOL "Disable SDL Render subsystem" FORCE)
+set(SDL_EVENTS     ON  CACHE BOOL "Disable SDL Events subsystem" FORCE)
+set(SDL_JOSTICK    OFF CACHE BOOL "Disable SDL Joystick subsystem" FORCE)
+set(SDL_HAPTIC     OFF CACHE BOOL "Disable SDL Haptic subsystem" FORCE)
+set(SDL_HIDAPI     ON  CACHE BOOL "Disable SDL Hidapi subsystem" FORCE)
+set(SDL_POWER      OFF CACHE BOOL "Disable SDL Power subsystem" FORCE)
+set(SDL_THREADS    ON  CACHE BOOL "Disable SDL Threads subsystem" FORCE)
+set(SDL_TIMERS     OFF CACHE BOOL "Disable SDL Timers subsystem" FORCE)
+set(SDL_FILE       ON  CACHE BOOL "Disable SDL File subsystem" FORCE)
+set(SDL_LOADSO     ON  CACHE BOOL "Disable SDL Loadso subsystem" FORCE)
+set(SDL_CPUINFO    OFF CACHE BOOL "Disable SDL CPUinfo subsystem" FORCE)
+set(SDL_FILESYSTEM ON  CACHE BOOL "Disable SDL Filesystem subsystem" FORCE)
+set(SDL_SENSOR     OFF CACHE BOOL "Disable SDL Sensor subsystem" FORCE)
+set(SDL_LOCALE     ON  CACHE BOOL "Disable SDL Locale subsystem" FORCE)
+set(SDL_MISC       ON  CACHE BOOL "Disable SDL Misc subsystem" FORCE)
+
+# SPIR-V shader reflection
+set(SPIRV_REFLECT_EXECUTABLE OFF)
+set(SPIRV_REFLECT_STATIC_LIB ON)
+set(SPIRV_REFLECT_BUILD_TESTS OFF)
+set(SPIRV_REFLECT_ENABLE_ASSERTS OFF)
+set(SPIRV_REFLECT_ENABLE_ASAN OFF)
 
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF) # enable git output for FetchContent steps
@@ -55,6 +62,7 @@ set(FETCHCONTENT_QUIET OFF) # enable git output for FetchContent steps
 find_package(Vulkan REQUIRED COMPONENTS glslangValidator)
 # fetch vulkan-related libraries
 FetchContent_Declare(vk-bootstrap GIT_REPOSITORY "https://github.com/charles-lunarg/vk-bootstrap.git" GIT_TAG "main" GIT_SHALLOW ON)
+FetchContent_Declare(spirv-reflect GIT_REPOSITORY "https://github.com/KhronosGroup/SPIRV-Reflect.git" GIT_TAG "main" GIT_SHALLOW ON)
 FetchContent_Declare(vma GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git" GIT_TAG "master" GIT_SHALLOW ON SOURCE_SUBDIR "disabled/")
 FetchContent_Declare(vma-hpp GIT_REPOSITORY "https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git" GIT_TAG "master" GIT_SHALLOW ON GIT_SUBMODULES "" SOURCE_SUBDIR "disabled/")
 # fetch misc libraries
@@ -62,7 +70,7 @@ FetchContent_Declare(sdl3 GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
 FetchContent_Declare(glm GIT_REPOSITORY "https://github.com/g-truc/glm.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(cmrc GIT_REPOSITORY "https://github.com/vector-of-bool/cmrc.git" GIT_TAG "master" GIT_SHALLOW ON)
-FetchContent_MakeAvailable(vk-bootstrap vma vma-hpp sdl3 glm fmt cmrc)
+FetchContent_MakeAvailable(vk-bootstrap spirv-reflect vma vma-hpp sdl3 glm fmt cmrc)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
 # compile GLSL shaders
@@ -72,7 +80,7 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES CONFIGURE_DEPENDS
     "${PROJECT_SOURCE_DIR}/shaders/*.comp")
 foreach(GLSL ${GLSL_SOURCE_FILES})
     get_filename_component(FILE_NAME "${GLSL}" NAME)
-    set(SPIRV "${PROJECT_SOURCE_DIR}/build/shaders/${FILE_NAME}.spv")
+    set(SPIRV "${CMAKE_CURRENT_BINARY_DIR}/shaders/${FILE_NAME}.spv")
     add_custom_command(
         COMMENT "Compiling shader: ${FILE_NAME}"
         OUTPUT  "${SPIRV}"
@@ -81,7 +89,8 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
     list(APPEND SPIRV_BINARY_FILES "${SPIRV}")
 endforeach(GLSL)
 add_custom_target(compile-shaders DEPENDS "${SPIRV_BINARY_FILES}")
-cmrc_add_resource_library(shaders ALIAS cmrc::shaders "${SPIRV_BINARY_FILES}")
+cmrc_add_resource_library(shaders ALIAS cmrc::shaders WHENCE "${CMAKE_CURRENT_BINARY_DIR}/shaders/" "${SPIRV_BINARY_FILES}")
+message("${SPIRV_BINARY_FILES}")
 
 # create executable target
 file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*")
@@ -100,6 +109,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Headers
     vk-bootstrap::vk-bootstrap
+    spirv-reflect-static
     SDL3::SDL3
     glm::glm
     fmt::fmt
