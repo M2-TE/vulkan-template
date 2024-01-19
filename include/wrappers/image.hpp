@@ -31,9 +31,24 @@ struct Image {
         view = device.createImageView(viewInfo);
     }
 
+    // TODO: replace the utils version with this
+    void transition_layout_rw() {
+        //lastKnownLayout = TODO
+    }
+    void transition_layout_wr() {
+
+    }
+    static void transition_layout_rw(Image& image) {
+
+    }
+    static void transition_layout_wr(Image& image) {
+
+    }
+
     vma::UniqueImage image;
     vma::UniqueAllocation allocation;
     vk::raii::ImageView view = nullptr;
     vk::Extent3D extent;
     vk::Format format;
+    vk::ImageLayout lastKnownLayout = vk::ImageLayout::eUndefined;
 };

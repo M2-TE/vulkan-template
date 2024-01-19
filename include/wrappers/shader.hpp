@@ -8,27 +8,6 @@
 
 CMRC_DECLARE(shaders);
 
-struct DescriptorAllocator {
-    struct PoolSizeRatio {
-        vk::DescriptorType type;
-        float ratio;
-    };
-    void init_pool(vk::raii::Device& device, uint32_t maxSets, std::vector<PoolSizeRatio>& poolRatios) {
-        std::vector<vk::DescriptorPoolSize> poolSizes;
-        for (auto& ratio : poolRatios) {
-            poolSizes.emplace_back(ratio.type, static_cast<uint32_t>(ratio.ratio * maxSets));
-        }
-
-        vk::DescriptorPoolCreateInfo createInfo = vk::DescriptorPoolCreateInfo()
-            .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
-            .setMaxSets(maxSets)
-            .setPoolSizes(poolSizes);
-        pool = device.createDescriptorPool(createInfo);
-    }
-
-    vk::raii::DescriptorPool pool = nullptr;
-};
-
 struct Shader {
 	Shader(std::string path) : path(path.append(".spv")) {}
 	void init(vk::raii::Device& device) {

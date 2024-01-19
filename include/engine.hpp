@@ -72,10 +72,10 @@ struct Engine {
             .setDevice(*device);
         alloc = vma::createAllocatorUnique(allocInfo);
 
-        // VkBootstrap: create swapchain
-        swapchain.init(physDevice, device, window);
         // VkBootstrap: create command queues
         queues.init(device, deviceVkb);
+        // VkBootstrap: create swapchain
+        swapchain.init(physDevice, device, window, queues);
         // Vulkan: create command buffers
         renderer.init(device, alloc, queues);
     }
