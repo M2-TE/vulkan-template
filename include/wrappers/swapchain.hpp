@@ -51,7 +51,7 @@ struct Swapchain {
         }
     }
     void present(vk::raii::Device& device, Image& image) {
-        FrameData& frame = frames[iFrame++ % frames.size()];
+        FrameData& frame = frames[iSyncFrame++ % frames.size()];
 
         // wait for this frame's fence to be signaled and reset it
         while (vk::Result::eTimeout == device.waitForFences({ *frame.renderFence }, vk::True, UINT64_MAX)) {}
@@ -80,7 +80,7 @@ struct Swapchain {
         cmd.clearColorImage(images[index], vk::ImageLayout::eTransferDstOptimal, clearColor, utils::default_subresource_range());
 
         // transition input image to readable layout
-        image.transition_layout_wr(cmd, image.lastKnownLayout, vk::ImageLayout::eTransferSrcOptimal,
+        image.transition_layout_wr(cmd, vk::ImageLayout::eTransferSrcOptimal,
             vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eBlit);
 
         // copy input image to swapchain image
@@ -145,5 +145,5 @@ struct Swapchain {
         vk::raii::Fence renderFence = nullptr;
     };
     std::vector<FrameData> frames;
-    uint32_t iFrame = 0;
+    uint32_t iSyncFrame = 0;
 };

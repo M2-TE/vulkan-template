@@ -45,6 +45,7 @@ struct Engine {
                 .setDynamicRendering(true)
                 .setSynchronization2(true))
             .set_required_features_12(vk::PhysicalDeviceVulkan12Features()
+                .setTimelineSemaphore(true)
                 .setBufferDeviceAddress(true)
                 .setDescriptorIndexing(true));
         auto deviceSelection = selector.select();
@@ -72,12 +73,12 @@ struct Engine {
             .setDevice(*device);
         alloc = vma::createAllocatorUnique(allocInfo);
 
-        // VkBootstrap: create command queues
+        // create command queues
         queues.init(device, deviceVkb);
-        // VkBootstrap: create swapchain
+        // create swapchain
         swapchain.init(physDevice, device, window, queues);
-        // Vulkan: create command buffers
-        renderer.init(device, alloc, queues);
+        // create render pipelines
+        renderer.init(device, alloc, queues, vk::Extent2D(window.extent));
     }
     void run() {
         bRunning = true;

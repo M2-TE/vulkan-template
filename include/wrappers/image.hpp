@@ -31,15 +31,14 @@ struct Image {
         view = device.createImageView(viewInfo);
     }
 
-    void transition_layout_rw(vk::raii::CommandBuffer& cmd,
-            vk::ImageLayout layoutOld, vk::ImageLayout layoutNew,
+    void transition_layout_rw(vk::raii::CommandBuffer& cmd, vk::ImageLayout layoutNew,
             vk::PipelineStageFlagBits2 srcStage, vk::PipelineStageFlagBits2 dstStage) {
         vk::ImageMemoryBarrier2 imageBarrier = vk::ImageMemoryBarrier2()
             .setSrcStageMask(srcStage)
             .setSrcAccessMask(vk::AccessFlagBits2::eMemoryRead)
             .setDstStageMask(dstStage)
             .setDstAccessMask(vk::AccessFlagBits2::eMemoryWrite)
-            .setOldLayout(layoutOld)
+            .setOldLayout(lastKnownLayout)
             .setNewLayout(layoutNew)
             .setSubresourceRange(vk::ImageSubresourceRange(aspects, 0, vk::RemainingMipLevels, 0, vk::RemainingArrayLayers))
             .setImage(*image);
@@ -49,15 +48,14 @@ struct Image {
         cmd.pipelineBarrier2(depInfo);
         lastKnownLayout = layoutNew;
     }
-    void transition_layout_wr(vk::raii::CommandBuffer& cmd,
-        vk::ImageLayout layoutOld, vk::ImageLayout layoutNew,
+    void transition_layout_wr(vk::raii::CommandBuffer& cmd, vk::ImageLayout layoutNew,
         vk::PipelineStageFlagBits2 srcStage, vk::PipelineStageFlagBits2 dstStage) {
         vk::ImageMemoryBarrier2 imageBarrier = vk::ImageMemoryBarrier2()
             .setSrcStageMask(srcStage)
             .setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
             .setDstStageMask(dstStage)
             .setDstAccessMask(vk::AccessFlagBits2::eMemoryRead)
-            .setOldLayout(layoutOld)
+            .setOldLayout(lastKnownLayout)
             .setNewLayout(layoutNew)
             .setSubresourceRange(vk::ImageSubresourceRange(aspects, 0, vk::RemainingMipLevels, 0, vk::RemainingArrayLayers))
             .setImage(*image);
