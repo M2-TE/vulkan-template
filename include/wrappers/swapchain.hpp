@@ -74,12 +74,14 @@ struct Swapchain {
         cmd.begin(cmdBeginInfo);
 
         // clear swapchain image
-        utils::transition_layout_rw(cmd, images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        utils::transition_layout_rw(cmd, images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+            vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eClear);
         vk::ClearColorValue clearColor = vk::ClearColorValue(0.5f, 0.0f, 0.0f, 1.0f);
         cmd.clearColorImage(images[index], vk::ImageLayout::eTransferDstOptimal, clearColor, utils::default_subresource_range());
 
         // transition input image to readable layout
-        utils::transition_layout_wr(cmd, *image.image, image.lastKnownLayout, vk::ImageLayout::eTransferSrcOptimal);
+        image.transition_layout_wr(cmd, image.lastKnownLayout, vk::ImageLayout::eTransferSrcOptimal,
+            vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eBlit);
 
         // copy input image to swapchain image
         vk::BlitImageInfo2 blitInfo = vk::BlitImageInfo2()
@@ -96,7 +98,8 @@ struct Swapchain {
         cmd.blitImage2(blitInfo);
 
         // finalize swapchain image
-        utils::transition_layout_wr(cmd, images[index], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR);
+        utils::transition_layout_wr(cmd, images[index], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
+            vk::PipelineStageFlagBits2::eBlit, vk::PipelineStageFlagBits2::eAllCommands);
         cmd.end();
 
         // submit command buffer to graphics queue

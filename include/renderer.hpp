@@ -43,7 +43,8 @@ struct Renderer {
 
 private:
     void shenanigans(vk::raii::Device& device, vk::raii::CommandBuffer& cmd) {
-        utils::transition_layout_rw(cmd, *image.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+        image.transition_layout_rw(cmd, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral,
+            vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eAllCommands);
 
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline);
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, *layout, 0, { *shader.descSet }, {});

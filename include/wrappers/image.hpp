@@ -31,18 +31,41 @@ struct Image {
         view = device.createImageView(viewInfo);
     }
 
-    // TODO: replace the utils version with this
-    void transition_layout_rw() {
-        //lastKnownLayout = TODO
+    void transition_layout_rw(vk::raii::CommandBuffer& cmd,
+            vk::ImageLayout layoutOld, vk::ImageLayout layoutNew,
+            vk::PipelineStageFlagBits2 srcStage, vk::PipelineStageFlagBits2 dstStage) {
+        vk::ImageMemoryBarrier2 imageBarrier = vk::ImageMemoryBarrier2()
+            .setSrcStageMask(srcStage)
+            .setSrcAccessMask(vk::AccessFlagBits2::eMemoryRead)
+            .setDstStageMask(dstStage)
+            .setDstAccessMask(vk::AccessFlagBits2::eMemoryWrite)
+            .setOldLayout(layoutOld)
+            .setNewLayout(layoutNew)
+            .setSubresourceRange(vk::ImageSubresourceRange(aspects, 0, vk::RemainingMipLevels, 0, vk::RemainingArrayLayers))
+            .setImage(*image);
+        vk::DependencyInfo depInfo = vk::DependencyInfo()
+            .setImageMemoryBarrierCount(1)
+            .setImageMemoryBarriers(imageBarrier);
+        cmd.pipelineBarrier2(depInfo);
+        lastKnownLayout = layoutNew;
     }
-    void transition_layout_wr() {
-
-    }
-    static void transition_layout_rw(Image& image) {
-
-    }
-    static void transition_layout_wr(Image& image) {
-
+    void transition_layout_wr(vk::raii::CommandBuffer& cmd,
+        vk::ImageLayout layoutOld, vk::ImageLayout layoutNew,
+        vk::PipelineStageFlagBits2 srcStage, vk::PipelineStageFlagBits2 dstStage) {
+        vk::ImageMemoryBarrier2 imageBarrier = vk::ImageMemoryBarrier2()
+            .setSrcStageMask(srcStage)
+            .setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
+            .setDstStageMask(dstStage)
+            .setDstAccessMask(vk::AccessFlagBits2::eMemoryRead)
+            .setOldLayout(layoutOld)
+            .setNewLayout(layoutNew)
+            .setSubresourceRange(vk::ImageSubresourceRange(aspects, 0, vk::RemainingMipLevels, 0, vk::RemainingArrayLayers))
+            .setImage(*image);
+        vk::DependencyInfo depInfo = vk::DependencyInfo()
+            .setImageMemoryBarrierCount(1)
+            .setImageMemoryBarriers(imageBarrier);
+        cmd.pipelineBarrier2(depInfo);
+        lastKnownLayout = layoutNew;
     }
 
     vma::UniqueImage image;
@@ -50,5 +73,6 @@ struct Image {
     vk::raii::ImageView view = nullptr;
     vk::Extent3D extent;
     vk::Format format;
+    vk::ImageAspectFlags aspects = vk::ImageAspectFlagBits::eColor;
     vk::ImageLayout lastKnownLayout = vk::ImageLayout::eUndefined;
 };
