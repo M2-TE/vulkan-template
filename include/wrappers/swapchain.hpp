@@ -5,6 +5,7 @@
 //
 #include "window.hpp"
 #include "image.hpp"
+#include "utils.hpp"
 
 struct Swapchain {
     void init(vk::raii::PhysicalDevice& physDevice, vk::raii::Device& device, Window& window, Queues& queues) {

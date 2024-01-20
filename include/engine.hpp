@@ -4,6 +4,7 @@
 #include <VkBootstrap.h>
 #include <SDL3/SDL_events.h>
 #include <fmt/base.h>
+#include <imgui.h>
 //
 #include <chrono>
 #include <thread>
@@ -24,7 +25,7 @@ struct Engine {
             .enable_extensions(window.extensions)
             .use_default_debug_messenger()
             .require_api_version(1, 3, 0);
-        if (window.use_debug_msg()) builder.request_validation_layers();
+        if (window.using_debug_msg()) builder.request_validation_layers();
         auto instanceBuild = builder.build();
         if (!instanceBuild) fmt::println("VkBootstrap error: {}", instanceBuild.error().message());
         vkb::Instance instanceVkb = instanceBuild.value();
@@ -79,6 +80,8 @@ struct Engine {
         swapchain.init(physDevice, device, window, queues);
         // create render pipelines
         renderer.init(device, alloc, queues, vk::Extent2D(window.extent));
+        // initialize imgui backend
+        window.imgui_init(instance, device, physDevice, queues, swapchain.format);
     }
     void run() {
         bRunning = true;
@@ -87,7 +90,12 @@ struct Engine {
             SDL_Event event;
             while (SDL_PollEvent(&event)) handle_event(event);
 
-            if (bRendering) renderer.render(device, swapchain, queues);
+            if (bRendering) {
+                window.imgui_new_frame();
+                renderer.render(device, swapchain, queues);
+                //ImGui::ShowDemoWindow();
+                queues.graphics.cmd_immediate(device, [&](vk::raii::CommandBuffer& cmd) { window.imgui_end_frame(cmd); });
+            }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         device.waitIdle();
@@ -95,6 +103,7 @@ struct Engine {
 
 private:
     void handle_event(SDL_Event& event) {
+        if (window.imgui_process_event(&event)) return;
         switch (event.type) {
             case SDL_EventType::SDL_EVENT_QUIT: bRunning = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_MINIMIZED: bRendering = false; break;

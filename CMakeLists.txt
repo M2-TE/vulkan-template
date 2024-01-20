@@ -70,7 +70,8 @@ FetchContent_Declare(sdl3 GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
 FetchContent_Declare(glm GIT_REPOSITORY "https://github.com/g-truc/glm.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(cmrc GIT_REPOSITORY "https://github.com/vector-of-bool/cmrc.git" GIT_TAG "master" GIT_SHALLOW ON)
-FetchContent_MakeAvailable(vk-bootstrap spirv-reflect vma vma-hpp sdl3 glm fmt cmrc)
+FetchContent_Declare(imgui GIT_REPOSITORY "https://github.com/ocornut/imgui.git" GIT_TAG "master" GIT_SHALLOW ON)
+FetchContent_MakeAvailable(vk-bootstrap spirv-reflect vma vma-hpp sdl3 glm fmt cmrc imgui)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
 # compile GLSL shaders
@@ -92,15 +93,24 @@ endforeach(GLSL)
 add_custom_target(compile-shaders DEPENDS "${SPIRV_BINARY_FILES}")
 cmrc_add_resource_library(shaders ALIAS cmrc::shaders WHENCE "${CMAKE_CURRENT_BINARY_DIR}/shaders/" "${SPIRV_BINARY_FILES}")
 
+# gather required imgui source files
+file(GLOB IMGUI_SOURCES CONFIGURE_DEPENDS 
+    "${imgui_SOURCE_DIR}/*.cpp" 
+    "${imgui_SOURCE_DIR}/backends/*vulkan.cpp" 
+    "${imgui_SOURCE_DIR}/backends/*sdl3.cpp")
+
 # create executable target
 file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*")
-add_executable(${PROJECT_NAME} "${SOURCE_FILES}")
+add_executable(${PROJECT_NAME} "${SOURCE_FILES}" "${IMGUI_SOURCES}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+    "${imgui_SOURCE_DIR}/"
     "${vma_SOURCE_DIR}/include/"
     "${vma-hpp_SOURCE_DIR}/include/")
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     "VULKAN_DEBUG_MSG_UTILS"
+    "IMGUI_IMPL_VULKAN_NO_PROTOTYPES"
+    "IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING"
     "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC"
     "VULKAN_HPP_NO_TO_STRING"
     "VULKAN_HPP_NO_SPACESHIP_OPERATOR"

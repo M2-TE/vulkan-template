@@ -1,22 +1,45 @@
 #pragma once
 #include <vulkan/vulkan_raii.hpp>
 #include <VkBootstrap.h>
+//
+#include <functional>
 
 struct Queue {
+    // queue objects
     uint32_t index;
     vk::raii::Queue queue = nullptr;
+    // oneshot command objects
     vk::raii::CommandPool cmdPool = nullptr;
     vk::raii::CommandBuffer cmd = nullptr; // buffer for immediate submissions
     vk::raii::Semaphore timeline = nullptr; // gpu->cpu sync
 
-    void init_sync(vk::raii::Device& device) {
-        vk::CommandPoolCreateInfo poolInfo({}, index);
+    void init(vk::raii::Device& device) {
+        vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, index);
         cmdPool = vk::raii::CommandPool(device, poolInfo);
         vk::CommandBufferAllocateInfo buffInfo(*cmdPool, vk::CommandBufferLevel::ePrimary, 1);
         cmd = std::move(device.allocateCommandBuffers(buffInfo)[0]);
-        reset_sync(device);
+        // create timeline semaphore
+        vk::SemaphoreTypeCreateInfo typeInfo = vk::SemaphoreTypeCreateInfo(vk::SemaphoreType::eTimeline, 0);
+        vk::SemaphoreCreateInfo semaInfo = vk::SemaphoreCreateInfo({}, &typeInfo);
+        timeline = device.createSemaphore(semaInfo);
     }
-    void reset_sync(vk::raii::Device& device) {
+    void cmd_immediate(vk::raii::Device& device, std::function<void(vk::raii::CommandBuffer& cmd)>&& fnc) {
+
+        // record cmd
+        cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+        fnc(cmd);
+        cmd.end();
+
+        // submit cmd
+        uint64_t waitVal = 1;
+        vk::SemaphoreSubmitInfo semaSign(*timeline, waitVal, vk::PipelineStageFlagBits2::eAllCommands);
+        vk::SubmitInfo2 submitInfo = vk::SubmitInfo2().setSignalSemaphoreInfos(semaSign);
+        queue.submit2(submitInfo);
+        vk::SemaphoreWaitInfo semaWait = vk::SemaphoreWaitInfo()
+            .setSemaphores(*timeline)
+            .setValues(waitVal);
+        while(vk::Result::eTimeout == device.waitSemaphores(semaWait, UINT64_MAX)) {}
+        // reset timeline semaphore
         vk::SemaphoreTypeCreateInfo typeInfo = vk::SemaphoreTypeCreateInfo(vk::SemaphoreType::eTimeline, 0);
         vk::SemaphoreCreateInfo semaInfo = vk::SemaphoreCreateInfo({}, &typeInfo);
         timeline = device.createSemaphore(semaInfo);
@@ -43,9 +66,9 @@ struct Queues {
         if (computeIndexVkb) compute.index = deviceVkb.get_dedicated_queue_index(vkb::QueueType::compute).value();
 
         // create command pool/buffer alongside timeline sync
-        graphics.init_sync(device);
-        transfer.init_sync(device);
-        compute.init_sync(device);
+        graphics.init(device);
+        transfer.init(device);
+        compute.init(device);
     }
 
     Queue graphics;
