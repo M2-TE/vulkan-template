@@ -87,7 +87,7 @@ struct Engine {
             SDL_Event event;
             while (SDL_PollEvent(&event)) handle_event(event);
 
-            if (bRendering) renderer.draw(device, swapchain, queues);
+            if (bRendering) renderer.render(device, swapchain, queues);
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         device.waitIdle();

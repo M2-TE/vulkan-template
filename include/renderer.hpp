@@ -56,7 +56,7 @@ struct Renderer {
             .setStage(stageInfo);
         pipeline = device.createComputePipeline(nullptr, pipeInfo);
     }
-    void draw(vk::raii::Device& device, Swapchain& swapchain, Queues& queues) {
+    void render(vk::raii::Device& device, Swapchain& swapchain, Queues& queues) {
         FrameData& frame = frames[iFrame++ % frames.size()];
 
         // wait for command buffer execution
