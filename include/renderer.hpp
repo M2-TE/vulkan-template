@@ -41,8 +41,11 @@ struct Renderer {
         // create shader pipeline (TODO: move more of this to pipeline.hpp or something)
         shader.init(device);
         shader.create_descriptors(device, image);
+
+        std::vector<vk::DescriptorSetLayout> layouts;
+        for (const auto& set : shader.descSetLayouts) layouts.emplace_back(*set);
         vk::PipelineLayoutCreateInfo layoutInfo = vk::PipelineLayoutCreateInfo()
-            .setSetLayouts(*shader.descSetLayout);
+            .setSetLayouts(layouts);
         layout = device.createPipelineLayout(layoutInfo);
         vk::PipelineShaderStageCreateInfo stageInfo = vk::PipelineShaderStageCreateInfo()
             .setModule(*shader.shader)
@@ -100,7 +103,7 @@ private:
             vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eComputeShader);
 
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline);
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, *layout, 0, { *shader.descSet }, {});
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, *layout, 0, shader.descSets, {});
         cmd.dispatch(std::ceil(image.extent.width / 16.0), std::ceil(image.extent.height / 16.0), 1);
     }
 private:
