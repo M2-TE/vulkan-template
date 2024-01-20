@@ -56,7 +56,6 @@ struct Shader {
         for (const auto& pair : bindingLookup) poolSizes.emplace_back(pair.first, pair.second);
         // create pool
         vk::DescriptorPoolCreateInfo poolCreateInfo = vk::DescriptorPoolCreateInfo()
-            .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet) // TODO: might not need this
             .setMaxSets(nDescSets)
             .setPoolSizes(poolSizes);
         pool = device.createDescriptorPool(poolCreateInfo);
@@ -91,8 +90,8 @@ struct Shader {
         descSets = (*device).allocateDescriptorSets(allocInfo);
 	}
 
-    // todo: deprecated, remove this
-	void create_descriptors(vk::raii::Device& device, Image& image) {
+    // todo: different layout/type based on shader stage? or extra param
+	void write_descriptor(Image& image, uint32_t set, uint32_t binding) {
         vk::DescriptorImageInfo imageInfo = vk::DescriptorImageInfo()
             .setImageLayout(vk::ImageLayout::eGeneral)
             .setImageView(*image.view);
@@ -102,16 +101,7 @@ struct Shader {
             .setDescriptorCount(1)
             .setDescriptorType(vk::DescriptorType::eStorageImage)
             .setImageInfo(imageInfo);
-        device.updateDescriptorSets(drawImageWrite, {});
-	}
-
-	void print_info() {
-		// figure out name and such
-		std::string_view view(path);
-		size_t delimPos = view.find_first_of('.', 0);
-		std::string_view shaderName = view.substr(0, delimPos);
-		std::string_view shaderType = view.substr(delimPos + 1, 4);
-		fmt::println("name: {}, type: {}", shaderName, shaderType);
+        pool.getDevice().updateDescriptorSets(drawImageWrite, {});
 	}
 
 	std::string path;
@@ -120,4 +110,7 @@ struct Shader {
 	vk::raii::DescriptorPool pool = nullptr;
 	std::vector<vk::DescriptorSet> descSets;
     std::vector<vk::raii::DescriptorSetLayout> descSetLayouts;
+
+    // todo if desired:
+    std::unordered_map<std::string, std::pair<uint32_t/*set*/, uint32_t/*binding*/>> namedDescriptors;
 };

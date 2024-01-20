@@ -40,7 +40,7 @@ struct Renderer {
 
         // create shader pipeline (TODO: move more of this to pipeline.hpp or something)
         shader.init(device);
-        shader.create_descriptors(device, image);
+        shader.write_descriptor(image, 0, 0);
 
         std::vector<vk::DescriptorSetLayout> layouts;
         for (const auto& set : shader.descSetLayouts) layouts.emplace_back(*set);
