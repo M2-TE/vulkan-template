@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan_raii.hpp>
-#include <cmrc/cmrc.hpp>
 #include <spirv_reflect.h>
+#include <cmrc/cmrc.hpp>
 #include <fmt/base.h>
 //
 #include <unordered_map>
@@ -12,6 +12,7 @@ CMRC_DECLARE(shaders);
 
 struct Shader {
 	Shader(std::string path) : path(path.append(".spv")) {}
+    
     void init(vk::raii::Device& device) {
 		cmrc::embedded_filesystem fs = cmrc::shaders::get_filesystem();
 		if (!fs.exists(path)) fmt::println("could not find shader: {}", path);
@@ -26,9 +27,8 @@ struct Shader {
 
 		// reflect spir-v shader contents
 		const spv_reflect::ShaderModule reflection(file.size(), pCode);
-
-        // read shader stage
 		stage = (vk::ShaderStageFlagBits)reflection.GetVulkanShaderStage();
+
         // enumerate sets
         uint32_t nDescSets = 0;
         std::vector<SpvReflectDescriptorSet*> reflDescSets;
@@ -89,15 +89,14 @@ struct Shader {
             .setSetLayouts(layouts);
         descSets = (*device).allocateDescriptorSets(allocInfo);
 	}
-
-    // todo: different layout/type based on shader stage? or extra param
+    // todo: different layout/type based on shader stage
 	void write_descriptor(Image& image, uint32_t set, uint32_t binding) {
         vk::DescriptorImageInfo imageInfo = vk::DescriptorImageInfo()
             .setImageLayout(vk::ImageLayout::eGeneral)
             .setImageView(*image.view);
         vk::WriteDescriptorSet drawImageWrite = vk::WriteDescriptorSet()
-            .setDstBinding(0)
-            .setDstSet(descSets[0])
+            .setDstBinding(binding)
+            .setDstSet(descSets[set])
             .setDescriptorCount(1)
             .setDescriptorType(vk::DescriptorType::eStorageImage)
             .setImageInfo(imageInfo);
@@ -110,7 +109,4 @@ struct Shader {
 	vk::raii::DescriptorPool pool = nullptr;
 	std::vector<vk::DescriptorSet> descSets;
     std::vector<vk::raii::DescriptorSetLayout> descSetLayouts;
-
-    // todo if desired:
-    std::unordered_map<std::string, std::pair<uint32_t/*set*/, uint32_t/*binding*/>> namedDescriptors;
 };

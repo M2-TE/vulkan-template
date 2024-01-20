@@ -106,12 +106,11 @@ private:
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, *layout, 0, shader.descSets, {});
         cmd.dispatch(std::ceil(image.extent.width / 16.0), std::ceil(image.extent.height / 16.0), 1);
     }
+
 private:
     struct FrameData {
-        // command recording
         vk::raii::CommandPool commandPool = nullptr;
         vk::raii::CommandBuffer commandBuffer = nullptr;
-        // synchronization
         vk::raii::Semaphore timeline = nullptr;
     };
     std::array<FrameData, 2> frames; // double buffering
