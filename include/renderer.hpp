@@ -73,7 +73,6 @@ struct Renderer {
 
         // record command buffer
         vk::raii::CommandBuffer& cmd = frame.commandBuffer;
-        cmd.reset();
         vk::CommandBufferBeginInfo cmdBeginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         cmd.begin(cmdBeginInfo);
         draw(device, cmd);
@@ -88,8 +87,8 @@ struct Renderer {
             .setCommandBuffers(*cmd);
         queues.graphics.queue.submit(submitInfo);
         
-        //shenanigans(device, cmd);
-        swapchain.present(device, image);
+        // present drawn image
+        swapchain.present(device, image); // todo: sync with semaphore
     }
 
 private:

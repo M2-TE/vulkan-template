@@ -69,7 +69,6 @@ struct Swapchain {
 
         // restart command buffer
         vk::raii::CommandBuffer& cmd = frame.commandBuffer;
-        cmd.reset();
         vk::CommandBufferBeginInfo cmdBeginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         cmd.begin(cmdBeginInfo);
 
