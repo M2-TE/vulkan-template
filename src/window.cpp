@@ -19,6 +19,7 @@
 #define MSG_UTILS_REQUESTED 0
 #endif
 
+static void imgui_clear(); // todo: remove forward decl
 Window::Window() {
     // SDL: init subsystem
     if (SDL_InitSubSystem(SDL_InitFlags::SDL_INIT_VIDEO)) fmt::println("{}", SDL_GetError());
@@ -42,6 +43,7 @@ Window::~Window() {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
+    imgui_clear();
     SDL_Quit();
 }
 void Window::init(vk::raii::Instance& instance, vk::DebugUtilsMessengerEXT msg) {
@@ -55,6 +57,11 @@ bool Window::using_debug_msg() {
     return (bool)MSG_UTILS_REQUESTED;
 }
 
+// todo: shove these into their own static namespace
+static vk::raii::DescriptorPool imguiDescPool = nullptr;
+static void imgui_clear() { // todo: rename
+    imguiDescPool.clear();
+}
 PFN_vkVoidFunction imgui_load_fnc(const char* function_name, void* user_data) {
     const vk::raii::Instance& instance = *reinterpret_cast<vk::raii::Instance*>(user_data);
     return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(*instance, function_name);
@@ -105,7 +112,7 @@ void Window::imgui_new_frame() {
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 }
-void Window::imgui_end_frame(vk::raii::CommandBuffer& cmd) {
+void Window::imgui_draw(vk::raii::CommandBuffer& cmd) {
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *cmd);
 }

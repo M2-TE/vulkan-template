@@ -73,13 +73,9 @@ struct Swapchain {
         vk::CommandBufferBeginInfo cmdBeginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         cmd.begin(cmdBeginInfo);
 
-        // clear swapchain image
+        // transition image layouts for upcoming blit
         utils::transition_layout_rw(cmd, images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
-            vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eClear);
-        vk::ClearColorValue clearColor = vk::ClearColorValue(0.5f, 0.0f, 0.0f, 1.0f);
-        cmd.clearColorImage(images[index], vk::ImageLayout::eTransferDstOptimal, clearColor, utils::default_subresource_range());
-
-        // transition input image to readable layout
+            vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eBlit);
         image.transition_layout_wr(cmd, vk::ImageLayout::eTransferSrcOptimal,
             vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eBlit);
 

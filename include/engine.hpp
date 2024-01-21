@@ -91,10 +91,9 @@ struct Engine {
             while (SDL_PollEvent(&event)) handle_event(event);
 
             if (bRendering) {
-                window.imgui_new_frame();
-                renderer.render(device, swapchain, queues);
+                //window.imgui_new_frame();
                 //ImGui::ShowDemoWindow();
-                queues.graphics.cmd_immediate(device, [&](vk::raii::CommandBuffer& cmd) { window.imgui_end_frame(cmd); });
+                renderer.render(device, swapchain, queues);
             }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }

@@ -10,13 +10,12 @@ struct Window {
     bool using_debug_msg();
 
     void imgui_init(vk::raii::Instance& instance, vk::raii::Device& device, vk::raii::PhysicalDevice& physDevice, Queues& queues, vk::Format swapchainFormat);
-    bool imgui_process_event(SDL_Event* pEvent);
-    void imgui_new_frame();
-    void imgui_end_frame(vk::raii::CommandBuffer& cmd);
+    static bool imgui_process_event(SDL_Event* pEvent);
+    static void imgui_new_frame();
+    static void imgui_draw(vk::raii::CommandBuffer& cmd);
 
     SDL_Window* pWindow;
     vk::raii::SurfaceKHR surface = nullptr;
-    vk::raii::DescriptorPool imguiDescPool = nullptr;
     vk::raii::DebugUtilsMessengerEXT debugMsg = nullptr;
     std::vector<const char*> extensions;
     std::string name = "Vulkan Renderer";
