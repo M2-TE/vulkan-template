@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.27)
 project(vulkan-renderer LANGUAGES CXX)
 
 # Generic CMake Settings
+set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
@@ -47,6 +49,9 @@ set(SDL_FILESYSTEM ON  CACHE BOOL "Disable SDL Filesystem subsystem" FORCE)
 set(SDL_SENSOR     OFF CACHE BOOL "Disable SDL Sensor subsystem" FORCE)
 set(SDL_LOCALE     ON  CACHE BOOL "Disable SDL Locale subsystem" FORCE)
 set(SDL_MISC       ON  CACHE BOOL "Disable SDL Misc subsystem" FORCE)
+
+# GLM
+set(GLM_BUILD_TESTS ON)
 
 # SPIR-V shader reflection
 set(SPIRV_REFLECT_EXECUTABLE OFF)

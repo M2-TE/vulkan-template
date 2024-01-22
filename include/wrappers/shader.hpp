@@ -27,7 +27,7 @@ struct Shader {
 
 		// reflect spir-v shader contents
 		const spv_reflect::ShaderModule reflection(file.size(), pCode);
-		stage = (vk::ShaderStageFlagBits)reflection.GetVulkanShaderStage();
+		stage = (vk::ShaderStageFlagBits)reflection.GetShaderStage();
 
         // enumerate sets
         uint32_t nDescSets = 0;
@@ -71,7 +71,7 @@ struct Shader {
                 fmt::println("{} at binding: {}", pBinding->name, pBinding->binding);
                 bindings[i].setBinding(pBinding->binding)
                     .setDescriptorCount(pBinding->count)
-                    .setStageFlags((vk::ShaderStageFlagBits)reflection.GetVulkanShaderStage())
+                    .setStageFlags((vk::ShaderStageFlagBits)reflection.GetShaderStage())
                     .setDescriptorType((vk::DescriptorType)pBinding->descriptor_type);
             }
 

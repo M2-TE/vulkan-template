@@ -4,6 +4,7 @@
 #include <fmt/base.h>
 //
 #include <array>
+#include <cmath>
 //
 #include "utils.hpp"
 #include "wrappers/queues.hpp"
@@ -110,7 +111,7 @@ private:
         vk::RenderingAttachmentInfo attachInfo = vk::RenderingAttachmentInfo()
             .setImageView(*image.view)
             .setImageLayout(image.lastKnownLayout) // todo
-            .setClearValue(vk::ClearValue({ {0.0f, 0.0f, 0.0f, 0.0f } })) // todo
+            // .setClearValue(vk::ClearValue({ {0.0f, 0.0f, 0.0f, 0.0f } })) // todo
             .setLoadOp(vk::AttachmentLoadOp::eLoad) // todo
             .setStoreOp(vk::AttachmentStoreOp::eStore);
         vk::RenderingInfo renderInfo = vk::RenderingInfo()
