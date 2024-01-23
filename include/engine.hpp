@@ -11,8 +11,9 @@
 //
 #include "window.hpp"
 #include "renderer.hpp"
-#include "wrappers/swapchain.hpp"
-#include "wrappers/queues.hpp"
+#include "imgui_backend.hpp"
+#include "vk_wrappers/swapchain.hpp"
+#include "vk_wrappers/queues.hpp"
 
 struct Engine {
     Engine() {
@@ -81,7 +82,9 @@ struct Engine {
         // create render pipelines
         renderer.init(device, alloc, queues, vk::Extent2D(window.extent));
         // initialize imgui backend
-        window.imgui_init(instance, device, physDevice, queues, swapchain.format);
+        ImGui::backend::init_sdl(window.pWindow);
+        ImGui::backend::init_vulkan(instance, device, physDevice, queues, swapchain.format);
+
     }
     void run() {
         bRunning = true;
@@ -102,7 +105,7 @@ struct Engine {
 
 private:
     void handle_event(SDL_Event& event) {
-        if (window.imgui_process_event(&event)) return;
+        if (ImGui::backend::process_event(&event)) return;
         switch (event.type) {
             case SDL_EventType::SDL_EVENT_QUIT: bRunning = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_MINIMIZED: bRendering = false; break;

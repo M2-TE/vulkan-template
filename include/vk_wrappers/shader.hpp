@@ -6,7 +6,7 @@
 //
 #include <unordered_map>
 //
-#include "wrappers/image.hpp"
+#include "vk_wrappers/image.hpp"
 
 CMRC_DECLARE(shaders);
 

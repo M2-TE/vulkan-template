@@ -7,10 +7,11 @@
 #include <cmath>
 //
 #include "utils.hpp"
-#include "wrappers/queues.hpp"
-#include "wrappers/swapchain.hpp"
-#include "wrappers/image.hpp"
-#include "wrappers/shader.hpp"
+#include "imgui_backend.hpp"
+#include "vk_wrappers/queues.hpp"
+#include "vk_wrappers/swapchain.hpp"
+#include "vk_wrappers/image.hpp"
+#include "vk_wrappers/shader.hpp"
 
 struct Renderer {
     void init(vk::raii::Device& device, vma::UniqueAllocator& alloc, Queues& queues, vk::Extent2D extent) {
@@ -119,7 +120,7 @@ private:
             .setLayerCount(1)
             .setColorAttachments(attachInfo);
         cmd.beginRendering(renderInfo);
-        Window::imgui_draw(cmd);
+        ImGui::backend::draw(cmd);
         cmd.endRendering();
     }
 
