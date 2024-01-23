@@ -34,6 +34,7 @@ struct Renderer {
             vk::SemaphoreCreateInfo semaInfo = vk::SemaphoreCreateInfo()
                 .setPNext(&typeInfo);
             frames[i].timeline = device.createSemaphore(semaInfo);
+            frames[i].timelineLast = typeInfo.initialValue;
         }
 
         // create image with 16 bits color depth
@@ -62,13 +63,8 @@ struct Renderer {
         FrameData& frame = frames[iFrame++ % frames.size()];
 
         // wait for command buffer execution
-        uint64_t signVal = 1;
-        while (vk::Result::eTimeout == device.waitSemaphores(vk::SemaphoreWaitInfo({}, *frame.timeline, signVal), UINT64_MAX)) {}
-
-        // reset semaphore
-        vk::SemaphoreTypeCreateInfo typeInfo(vk::SemaphoreType::eTimeline, 0);
-        vk::SemaphoreCreateInfo semaInfo({}, &typeInfo);
-        frame.timeline = device.createSemaphore(semaInfo);
+        while (vk::Result::eTimeout == device.waitSemaphores(vk::SemaphoreWaitInfo({}, *frame.timeline, frame.timelineLast), UINT64_MAX)) {}
+        frame.reset_timeline(device);
 
         // record command buffer
         vk::raii::CommandBuffer& cmd = frame.commandBuffer;
@@ -79,7 +75,7 @@ struct Renderer {
         cmd.end();
 
         // submit command buffer
-        vk::TimelineSemaphoreSubmitInfo timelineInfo({}, signVal);
+        vk::TimelineSemaphoreSubmitInfo timelineInfo({}, ++frame.timelineLast);
         vk::SubmitInfo submitInfo = vk::SubmitInfo()
             .setPNext(&timelineInfo)
             .setSignalSemaphores(*frame.timeline)
@@ -107,9 +103,16 @@ private:
 
 private:
     struct FrameData {
+        void reset_timeline(vk::raii::Device& device) {
+            vk::SemaphoreTypeCreateInfo typeInfo(vk::SemaphoreType::eTimeline, 0);
+            vk::SemaphoreCreateInfo semaInfo({}, &typeInfo);
+            timeline = device.createSemaphore(semaInfo);
+            timelineLast = typeInfo.initialValue;
+        }
         vk::raii::CommandPool commandPool = nullptr;
         vk::raii::CommandBuffer commandBuffer = nullptr;
         vk::raii::Semaphore timeline = nullptr;
+        uint64_t timelineLast;
     };
     std::array<FrameData, 2> frames; // double buffering
     uint32_t iFrame = 0;
