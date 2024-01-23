@@ -63,27 +63,23 @@ struct Renderer {
 
         // wait for command buffer execution
         uint64_t signVal = 1;
-        while (vk::Result::eTimeout == device.waitSemaphores(vk::SemaphoreWaitInfo().setSemaphores(*frame.timeline).setValues(signVal), UINT64_MAX)) {}
+        while (vk::Result::eTimeout == device.waitSemaphores(vk::SemaphoreWaitInfo({}, *frame.timeline, signVal), UINT64_MAX)) {}
 
         // reset semaphore
-        vk::SemaphoreTypeCreateInfo typeInfo = vk::SemaphoreTypeCreateInfo()
-            .setInitialValue(0)
-            .setSemaphoreType(vk::SemaphoreType::eTimeline);
-        vk::SemaphoreCreateInfo semaInfo = vk::SemaphoreCreateInfo()
-            .setPNext(&typeInfo);
+        vk::SemaphoreTypeCreateInfo typeInfo(vk::SemaphoreType::eTimeline, 0);
+        vk::SemaphoreCreateInfo semaInfo({}, &typeInfo);
         frame.timeline = device.createSemaphore(semaInfo);
 
         // record command buffer
         vk::raii::CommandBuffer& cmd = frame.commandBuffer;
-        vk::CommandBufferBeginInfo cmdBeginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+        vk::CommandBufferBeginInfo cmdBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         cmd.begin(cmdBeginInfo);
         draw(device, cmd);
         ImGui::backend::draw(cmd, image.view, image.lastKnownLayout, image.extent);
         cmd.end();
 
         // submit command buffer
-        vk::TimelineSemaphoreSubmitInfo timelineInfo = vk::TimelineSemaphoreSubmitInfo()
-            .setSignalSemaphoreValues(signVal);
+        vk::TimelineSemaphoreSubmitInfo timelineInfo({}, signVal);
         vk::SubmitInfo submitInfo = vk::SubmitInfo()
             .setPNext(&timelineInfo)
             .setSignalSemaphores(*frame.timeline)
@@ -106,7 +102,7 @@ private:
 
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline);
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, *layout, 0, shader.descSets, {});
-        cmd.dispatch(std::ceil(image.extent.width / 16.0), std::ceil(image.extent.height / 16.0), 1);
+        cmd.dispatch(std::ceil(image.extent.width / 16.0f), std::ceil(image.extent.height / 16.0f), 1);
     }
 
 private:
