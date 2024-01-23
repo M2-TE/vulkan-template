@@ -49,16 +49,8 @@ set(SDL_FILESYSTEM ON  CACHE BOOL "Disable SDL Filesystem subsystem" FORCE)
 set(SDL_SENSOR     OFF CACHE BOOL "Disable SDL Sensor subsystem" FORCE)
 set(SDL_LOCALE     ON  CACHE BOOL "Disable SDL Locale subsystem" FORCE)
 set(SDL_MISC       ON  CACHE BOOL "Disable SDL Misc subsystem" FORCE)
-
 # GLM
-set(GLM_BUILD_TESTS ON)
-
-# SPIR-V shader reflection
-set(SPIRV_REFLECT_EXECUTABLE OFF)
-set(SPIRV_REFLECT_STATIC_LIB ON)
-set(SPIRV_REFLECT_BUILD_TESTS OFF)
-set(SPIRV_REFLECT_ENABLE_ASSERTS OFF)
-set(SPIRV_REFLECT_ENABLE_ASAN OFF)
+set(GLM_BUILD_TESTS OFF)
 
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF) # enable git output for FetchContent steps
@@ -67,7 +59,7 @@ set(FETCHCONTENT_QUIET OFF) # enable git output for FetchContent steps
 find_package(Vulkan REQUIRED COMPONENTS glslangValidator)
 # fetch vulkan-related libraries
 FetchContent_Declare(vk-bootstrap GIT_REPOSITORY "https://github.com/charles-lunarg/vk-bootstrap.git" GIT_TAG "main" GIT_SHALLOW ON)
-FetchContent_Declare(spirv-reflect GIT_REPOSITORY "https://github.com/KhronosGroup/SPIRV-Reflect.git" GIT_TAG "main" GIT_SHALLOW ON)
+FetchContent_Declare(spirv_reflect GIT_REPOSITORY "https://github.com/KhronosGroup/SPIRV-Reflect.git" GIT_TAG "main" GIT_SHALLOW ON SOURCE_SUBDIR "disabled/")
 FetchContent_Declare(vma GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git" GIT_TAG "master" GIT_SHALLOW ON SOURCE_SUBDIR "disabled/")
 FetchContent_Declare(vma-hpp GIT_REPOSITORY "https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git" GIT_TAG "master" GIT_SHALLOW ON GIT_SUBMODULES "" SOURCE_SUBDIR "disabled/")
 # fetch misc libraries
@@ -76,7 +68,7 @@ FetchContent_Declare(glm GIT_REPOSITORY "https://github.com/g-truc/glm.git" GIT_
 FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(cmrc GIT_REPOSITORY "https://github.com/vector-of-bool/cmrc.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(imgui GIT_REPOSITORY "https://github.com/ocornut/imgui.git" GIT_TAG "master" GIT_SHALLOW ON)
-FetchContent_MakeAvailable(vk-bootstrap spirv-reflect vma vma-hpp sdl3 glm fmt cmrc imgui)
+FetchContent_MakeAvailable(vk-bootstrap spirv_reflect vma vma-hpp sdl3 glm fmt cmrc imgui)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
 # compile GLSL shaders
@@ -98,7 +90,11 @@ endforeach(GLSL)
 add_custom_target(compile-shaders DEPENDS "${SPIRV_BINARY_FILES}")
 cmrc_add_resource_library(shaders ALIAS cmrc::shaders WHENCE "${CMAKE_CURRENT_BINARY_DIR}/shaders/" "${SPIRV_BINARY_FILES}")
 
-# gather required imgui source files
+# compile spirv_reflect as its own library
+add_library(spirv_reflect STATIC "${spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp")
+target_include_directories(spirv_reflect PUBLIC "${spirv_reflect_SOURCE_DIR}/")
+
+# gather ImGui sources
 file(GLOB IMGUI_SOURCES CONFIGURE_DEPENDS 
     "${imgui_SOURCE_DIR}/*.cpp" 
     "${imgui_SOURCE_DIR}/backends/*vulkan.cpp" 
@@ -106,7 +102,9 @@ file(GLOB IMGUI_SOURCES CONFIGURE_DEPENDS
 
 # create executable target
 file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*")
-add_executable(${PROJECT_NAME} "${SOURCE_FILES}" "${IMGUI_SOURCES}")
+add_executable(${PROJECT_NAME} 
+    "${SOURCE_FILES}" 
+    "${IMGUI_SOURCES}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
     "${imgui_SOURCE_DIR}/"
@@ -124,7 +122,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Headers
     vk-bootstrap::vk-bootstrap
-    spirv-reflect-static
+    spirv_reflect
     SDL3::SDL3
     glm::glm
     fmt::fmt

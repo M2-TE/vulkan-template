@@ -65,9 +65,20 @@ namespace ImGui {
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
         }
-        void draw(vk::raii::CommandBuffer& cmd) {
+        void draw(vk::raii::CommandBuffer& cmd, vk::raii::ImageView& imageView, vk::ImageLayout layout, vk::Extent3D extent) {
+            vk::RenderingAttachmentInfo attachInfo = vk::RenderingAttachmentInfo()
+                .setImageView(*imageView)
+                .setImageLayout(layout)
+                .setLoadOp(vk::AttachmentLoadOp::eLoad)
+                .setStoreOp(vk::AttachmentStoreOp::eStore);
+            vk::RenderingInfo renderInfo = vk::RenderingInfo()
+                .setRenderArea(vk::Rect2D({ 0, 0 }, { extent.width, extent.height }))
+                .setLayerCount(1)
+                .setColorAttachments(attachInfo);
+            cmd.beginRendering(renderInfo);
             ImGui::Render();
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *cmd);
+            cmd.endRendering();
         }
         void shutdown() {
             ImGui_ImplVulkan_Shutdown();

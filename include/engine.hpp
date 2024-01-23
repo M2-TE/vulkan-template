@@ -94,12 +94,13 @@ struct Engine {
             while (SDL_PollEvent(&event)) handle_event(event);
 
             if (bRendering) {
-                //window.imgui_new_frame();
-                //ImGui::ShowDemoWindow();
+                ImGui::backend::new_frame();
+                ImGui::ShowDemoWindow();
                 renderer.render(device, swapchain, queues);
             }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
+        ImGui::backend::shutdown();
         device.waitIdle();
     }
 

@@ -78,7 +78,7 @@ struct Renderer {
         vk::CommandBufferBeginInfo cmdBeginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         cmd.begin(cmdBeginInfo);
         draw(device, cmd);
-        //imgui_draw(cmd);
+        ImGui::backend::draw(cmd, image.view, image.lastKnownLayout, image.extent);
         cmd.end();
 
         // submit command buffer
@@ -107,21 +107,6 @@ private:
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline);
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, *layout, 0, shader.descSets, {});
         cmd.dispatch(std::ceil(image.extent.width / 16.0), std::ceil(image.extent.height / 16.0), 1);
-    }
-    void imgui_draw(vk::raii::CommandBuffer& cmd) {
-        vk::RenderingAttachmentInfo attachInfo = vk::RenderingAttachmentInfo()
-            .setImageView(*image.view)
-            .setImageLayout(image.lastKnownLayout) // todo
-            // .setClearValue(vk::ClearValue({ {0.0f, 0.0f, 0.0f, 0.0f } })) // todo
-            .setLoadOp(vk::AttachmentLoadOp::eLoad) // todo
-            .setStoreOp(vk::AttachmentStoreOp::eStore);
-        vk::RenderingInfo renderInfo = vk::RenderingInfo()
-            .setRenderArea(vk::Rect2D({ 0, 0 }, { image.extent.width, image.extent.height }))
-            .setLayerCount(1)
-            .setColorAttachments(attachInfo);
-        cmd.beginRendering(renderInfo);
-        ImGui::backend::draw(cmd);
-        cmd.endRendering();
     }
 
 private:
