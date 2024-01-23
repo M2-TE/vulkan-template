@@ -95,7 +95,7 @@ struct Engine {
 
             if (bRendering) {
                 ImGui::backend::new_frame();
-                ImGui::ShowDemoWindow();
+                ImGui::frontend::display_fps();
                 renderer.render(device, swapchain, queues);
             }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));

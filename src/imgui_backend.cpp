@@ -43,6 +43,7 @@ namespace ImGui {
             descPool = device.createDescriptorPool(poolInfo);
 
             // initialize vulkan backend
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             ImGui_ImplVulkan_InitInfo initInfo = {};
             initInfo.Instance = *instance;
             initInfo.PhysicalDevice = *physDevice;
