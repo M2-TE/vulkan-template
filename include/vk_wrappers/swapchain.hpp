@@ -52,6 +52,9 @@ struct Swapchain {
             frames[i].renderFence = device.createFence(fenceInfo);
         }
     }
+    void resize() {
+        
+    }
     void present(vk::raii::Device& device, Image& image, vk::raii::Semaphore& imageSema, uint64_t& semaValue) {
         FrameData& frame = frames[iSyncFrame++ % frames.size()];
         vk::Result result;
@@ -59,7 +62,7 @@ struct Swapchain {
 
         // wait for this frame's fence to be signaled and reset it
         result = vk::Result::eTimeout;
-        while (vk::Result::eTimeout == result) result = device.waitForFences({ *frame.renderFence }, vk::True, UINT64_MAX);
+        while (vk::Result::eTimeout == result) result = device.waitForFences(*frame.renderFence, vk::True, UINT64_MAX);
         device.resetFences({ *frame.renderFence });
 
         // acquire image from swapchain
