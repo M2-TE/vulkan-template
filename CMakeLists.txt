@@ -95,10 +95,9 @@ add_library(spirv_reflect STATIC "${spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp"
 target_include_directories(spirv_reflect PUBLIC "${spirv_reflect_SOURCE_DIR}/")
 
 # gather ImGui sources
-file(GLOB IMGUI_SOURCES CONFIGURE_DEPENDS 
-    "${imgui_SOURCE_DIR}/*.cpp" 
-    "${imgui_SOURCE_DIR}/backends/*vulkan.cpp" 
-    "${imgui_SOURCE_DIR}/backends/*sdl3.cpp")
+file(GLOB IMGUI_SOURCES CONFIGURE_DEPENDS "${imgui_SOURCE_DIR}/*.cpp")
+list(APPEND IMGUI_SOURCES "${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp")
+list(APPEND IMGUI_SOURCES "${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp")
 
 # create executable target
 file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*")
