@@ -89,7 +89,7 @@ struct Engine {
     void run() {
         bRunning = true;
         bRendering = true;
-        while(bRunning){
+        while(bRunning) {
             SDL_Event event;
             while (SDL_PollEvent(&event)) handle_event(event);
 
@@ -102,7 +102,7 @@ struct Engine {
 
             if (swapchain.bResizeRequested) {
                 device.waitIdle();
-                // todo: reset renderer
+                // todo: make proper reset functions
                 renderer = {};
                 renderer.init(device, alloc, queues, window.size());
                 swapchain = {};
@@ -123,6 +123,24 @@ private:
             case SDL_EventType::SDL_EVENT_WINDOW_RESTORED: bRendering = true; break;
             default: break;
         }
+    }
+    void set_fullscreen(bool bFullscreen) { // todo
+        SDL_SetWindowFullscreen(window.pWindow, bFullscreen);
+        SDL_SyncWindow(window.pWindow);
+
+        renderer = {};
+        renderer.init(device, alloc, queues, window.size());
+        swapchain = {};
+        swapchain.init(physDevice, device, window, queues);
+    }
+    void set_size(int width, int height) { // todo
+        SDL_SetWindowSize(window.pWindow, width, height);
+        SDL_SyncWindow(window.pWindow);
+
+        renderer = {};
+        renderer.init(device, alloc, queues, window.size());
+        swapchain = {};
+        swapchain.init(physDevice, device, window, queues);
     }
 private:
     vk::raii::Context context;
