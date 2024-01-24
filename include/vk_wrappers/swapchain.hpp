@@ -94,10 +94,12 @@ struct Swapchain {
         cmd.blitImage2(blitInfo);
         
         // draw ImGui UI directly onto swapchain image
-        ImGui::backend::draw(cmd, imageViews[index], vk::ImageLayout::eTransferDstOptimal, extent);
+        utils::transition_layout_rw(cmd, images[index], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eAttachmentOptimal,
+            vk::PipelineStageFlagBits2::eBlit, vk::PipelineStageFlagBits2::eAllGraphics);
+        ImGui::backend::draw(cmd, imageViews[index], vk::ImageLayout::eAttachmentOptimal, extent);
 
         // finalize swapchain image
-        utils::transition_layout_wr(cmd, images[index], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
+        utils::transition_layout_wr(cmd, images[index], vk::ImageLayout::eAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR,
             vk::PipelineStageFlagBits2::eBlit, vk::PipelineStageFlagBits2::eAllCommands);
         cmd.end();
 
