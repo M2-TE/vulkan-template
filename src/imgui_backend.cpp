@@ -66,7 +66,7 @@ namespace ImGui {
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
         }
-        void draw(vk::raii::CommandBuffer& cmd, vk::raii::ImageView& imageView, vk::ImageLayout layout, vk::Extent3D extent) {
+        void draw(vk::raii::CommandBuffer& cmd, vk::raii::ImageView& imageView, vk::ImageLayout layout, vk::Extent2D extent) {
             vk::RenderingAttachmentInfo attachInfo = vk::RenderingAttachmentInfo()
                 .setImageView(*imageView)
                 .setImageLayout(layout)

@@ -6,6 +6,7 @@
 #include "window.hpp"
 #include "image.hpp"
 #include "utils.hpp"
+#include "imgui_backend.hpp"
 
 struct Swapchain {
     void init(vk::raii::PhysicalDevice& physDevice, vk::raii::Device& device, Window& window, Queues& queues) {
@@ -44,14 +45,14 @@ struct Swapchain {
         // Vulkan:: create synchronization objects
         for (uint32_t i = 0; i < swapchainVkb.image_count; i++) {
             vk::SemaphoreCreateInfo semaInfo = vk::SemaphoreCreateInfo();
-            frames[i].swapchainSemaphore = device.createSemaphore(semaInfo);
-            frames[i].renderSemaphore = device.createSemaphore(semaInfo);
+            frames[i].swapAcquireSema = device.createSemaphore(semaInfo);
+            frames[i].swapWriteSema = device.createSemaphore(semaInfo);
 
             vk::FenceCreateInfo fenceInfo = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
             frames[i].renderFence = device.createFence(fenceInfo);
         }
     }
-    void present(vk::raii::Device& device, Image& image) {
+    void present(vk::raii::Device& device, Image& image, vk::raii::Semaphore& imageSema, uint64_t& semaValue) {
         FrameData& frame = frames[iSyncFrame++ % frames.size()];
 
         // wait for this frame's fence to be signaled and reset it
@@ -59,7 +60,7 @@ struct Swapchain {
         device.resetFences({ *frame.renderFence });
 
         // acquire image from swapchain
-        auto [result, index] = swapchain.acquireNextImage(UINT64_MAX, *frame.swapchainSemaphore);
+        auto [result, index] = swapchain.acquireNextImage(UINT64_MAX, *frame.swapAcquireSema);
         switch (result) {
             case vk::Result::eSuboptimalKHR: fmt::println("Suboptimal swapchain image acquisition"); break;
             case vk::Result::eTimeout: fmt::println("Timeout on swapchain image acquisition"); break;
@@ -92,6 +93,9 @@ struct Swapchain {
             .setDstImageLayout(vk::ImageLayout::eTransferDstOptimal)
             .setFilter(vk::Filter::eLinear);
         cmd.blitImage2(blitInfo);
+        
+        // draw ImGui UI directly onto swapchain image
+        ImGui::backend::draw(cmd, imageViews[index], vk::ImageLayout::eTransferDstOptimal, extent);
 
         // finalize swapchain image
         utils::transition_layout_wr(cmd, images[index], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
@@ -99,25 +103,35 @@ struct Swapchain {
         cmd.end();
 
         // submit command buffer to graphics queue
-        vk::SemaphoreSubmitInfo swapchainWaitInfo = vk::SemaphoreSubmitInfo()
-            .setSemaphore(*frame.swapchainSemaphore)
-            .setStageMask(vk::PipelineStageFlagBits2::eTransfer)
-            .setDeviceIndex(0)
-            .setValue(1);
-        vk::SemaphoreSubmitInfo renderSignalInfo = vk::SemaphoreSubmitInfo(swapchainWaitInfo)
-            .setSemaphore(*frame.renderSemaphore)
-            .setStageMask(vk::PipelineStageFlagBits2::eAllCommands);
+        std::array<vk::SemaphoreSubmitInfo, 2> waitInfos = {
+            vk::SemaphoreSubmitInfo()
+                .setSemaphore(*imageSema)
+                .setStageMask(vk::PipelineStageFlagBits2::eAllCommands)
+                .setValue(semaValue),
+            vk::SemaphoreSubmitInfo()
+                .setSemaphore(*frame.swapAcquireSema)
+                .setStageMask(vk::PipelineStageFlagBits2::eAllCommands)
+        };
+        std::array<vk::SemaphoreSubmitInfo, 2> signInfos = {
+            vk::SemaphoreSubmitInfo()
+                .setSemaphore(*imageSema)
+                .setStageMask(vk::PipelineStageFlagBits2::eTransfer)
+                .setValue(++semaValue),
+            vk::SemaphoreSubmitInfo()
+                .setSemaphore(*frame.swapWriteSema)
+                .setStageMask(vk::PipelineStageFlagBits2::eAllCommands)
+        };
         vk::CommandBufferSubmitInfo cmdSubmitInfo(*cmd);
         vk::SubmitInfo2 submitInfo = vk::SubmitInfo2()
-            .setWaitSemaphoreInfos(swapchainWaitInfo)
-            .setCommandBufferInfos(cmdSubmitInfo)
-            .setSignalSemaphoreInfos(renderSignalInfo);
+            .setWaitSemaphoreInfos(waitInfos)
+            .setSignalSemaphoreInfos(signInfos)
+            .setCommandBufferInfos(cmdSubmitInfo);
         presentationQueue.submit2(submitInfo, *frame.renderFence);
 
         // present swapchain image
         vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR()
             .setSwapchains(*swapchain)
-            .setWaitSemaphores(*frame.renderSemaphore)
+            .setWaitSemaphores(*frame.swapWriteSema)
             .setImageIndices(index);
         result = presentationQueue.presentKHR(presentInfo);
         if (result == vk::Result::eSuboptimalKHR) fmt::println("Suboptimal swapchain image presentation");
@@ -136,8 +150,8 @@ struct Swapchain {
         vk::raii::CommandPool commandPool = nullptr;
         vk::raii::CommandBuffer commandBuffer = nullptr;
         // synchronization
-        vk::raii::Semaphore swapchainSemaphore = nullptr;
-        vk::raii::Semaphore renderSemaphore = nullptr;
+        vk::raii::Semaphore swapAcquireSema = nullptr;
+        vk::raii::Semaphore swapWriteSema = nullptr;
         vk::raii::Fence renderFence = nullptr;
     };
     std::vector<FrameData> frames;

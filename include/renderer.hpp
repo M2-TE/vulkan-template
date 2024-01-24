@@ -7,7 +7,6 @@
 #include <cmath>
 //
 #include "utils.hpp"
-#include "imgui_backend.hpp"
 #include "vk_wrappers/queues.hpp"
 #include "vk_wrappers/swapchain.hpp"
 #include "vk_wrappers/image.hpp"
@@ -71,7 +70,6 @@ struct Renderer {
         vk::CommandBufferBeginInfo cmdBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         cmd.begin(cmdBeginInfo);
         draw(device, cmd);
-        ImGui::backend::draw(cmd, image.view, image.lastKnownLayout, image.extent);
         cmd.end();
 
         // submit command buffer
@@ -83,7 +81,7 @@ struct Renderer {
         queues.graphics.queue.submit(submitInfo);
         
         // present drawn image
-        swapchain.present(device, image); // todo: sync with semaphore
+        swapchain.present(device, image, frame.timeline, frame.timelineLast); 
     }
 
 private:
