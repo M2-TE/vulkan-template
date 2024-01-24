@@ -20,12 +20,12 @@
 #endif
 
 static void imgui_clear(); // todo: remove forward decl
-Window::Window() {
+Window::Window(int width, int height) {
     // SDL: init subsystem
     if (SDL_InitSubSystem(SDL_InitFlags::SDL_INIT_VIDEO)) fmt::println("{}", SDL_GetError());
 
     // SDL: create window
-    pWindow = SDL_CreateWindow(name.c_str(), extent.width, extent.height, SDL_WINDOW_VULKAN);
+    pWindow = SDL_CreateWindow(name.c_str(), width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
     if (pWindow == nullptr) fmt::println("{}", SDL_GetError());
     
     // SDL: query required extensions
@@ -44,6 +44,12 @@ void Window::init(vk::raii::Instance& instance, vk::DebugUtilsMessengerEXT msg) 
     if (!SDL_Vulkan_CreateSurface(pWindow, *instance, nullptr, &surfaceTemp)) fmt::println("{}", SDL_GetError());
     surface = vk::raii::SurfaceKHR(instance, surfaceTemp);
     MSG_UTILS(debugMsg = vk::raii::DebugUtilsMessengerEXT(instance, msg));
+}
+vk::Extent2D Window::size() {
+    int width = 0;
+    int height = 0;
+    if (SDL_GetWindowSizeInPixels(pWindow, &width, &height)) fmt::println("{}", SDL_GetError());
+    return vk::Extent2D((uint32_t)width, (uint32_t)height);
 }
 bool Window::using_debug_msg() {
     return (bool)MSG_UTILS_REQUESTED;

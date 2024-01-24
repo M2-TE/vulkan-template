@@ -83,7 +83,7 @@ struct Renderer {
         // present drawn image
         swapchain.present(device, image, frame.timeline, frame.timelineLast); 
     }
-
+    
 private:
     void draw(vk::raii::Device& device, vk::raii::CommandBuffer& cmd) {
         // transition images to write only:

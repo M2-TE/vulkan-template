@@ -80,7 +80,7 @@ struct Engine {
         // create swapchain
         swapchain.init(physDevice, device, window, queues);
         // create render pipelines
-        renderer.init(device, alloc, queues, vk::Extent2D(window.extent));
+        renderer.init(device, alloc, queues, vk::Extent2D(window.size()));
         // initialize imgui backend
         ImGui::backend::init_sdl(window.pWindow);
         ImGui::backend::init_vulkan(instance, device, physDevice, queues, swapchain.format);
@@ -99,6 +99,15 @@ struct Engine {
                 renderer.render(device, swapchain, queues);
             }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            if (swapchain.bResizeRequested) {
+                device.waitIdle();
+                // todo: reset renderer
+                renderer = {};
+                renderer.init(device, alloc, queues, window.size());
+                swapchain = {};
+                swapchain.init(physDevice, device, window, queues);
+            }
         }
         ImGui::backend::shutdown();
         device.waitIdle();
@@ -106,7 +115,8 @@ struct Engine {
 
 private:
     void handle_event(SDL_Event& event) {
-        if (ImGui::backend::process_event(&event)) return;
+        // if (ImGui::backend::process_event(&event)) return;
+        // ImGui::backend::process_event(&event);
         switch (event.type) {
             case SDL_EventType::SDL_EVENT_QUIT: bRunning = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_MINIMIZED: bRendering = false; break;
@@ -114,14 +124,13 @@ private:
             default: break;
         }
     }
-
 private:
     vk::raii::Context context;
     vk::raii::Instance instance = nullptr;
     vk::raii::PhysicalDevice physDevice = nullptr;
     vk::raii::Device device = nullptr;
     vma::UniqueAllocator alloc;
-    Window window;
+    Window window = { 1280, 720 };
     Swapchain swapchain;
     Queues queues;
     Renderer renderer;

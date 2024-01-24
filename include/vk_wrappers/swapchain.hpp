@@ -10,9 +10,11 @@
 
 struct Swapchain {
     void init(vk::raii::PhysicalDevice& physDevice, vk::raii::Device& device, Window& window, Queues& queues) {
+        bResizeRequested = false;
+
         // VkBoostrap: build swapchain
         vkb::SwapchainBuilder swapchainBuilder(*physDevice, *device, *window.surface);
-        swapchainBuilder.set_desired_extent(window.extent.width, window.extent.height)
+        swapchainBuilder.set_desired_extent(window.size().width, window.size().height)
             .set_desired_format(vk::SurfaceFormatKHR(vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear))
             .set_desired_present_mode((VkPresentModeKHR)vk::PresentModeKHR::eFifo)
             .add_image_usage_flags((VkImageUsageFlags)vk::ImageUsageFlagBits::eTransferDst);
@@ -52,9 +54,6 @@ struct Swapchain {
             frames[i].renderFence = device.createFence(fenceInfo);
         }
     }
-    void resize() {
-        
-    }
     void present(vk::raii::Device& device, Image& image, vk::raii::Semaphore& imageSema, uint64_t& semaValue) {
         FrameData& frame = frames[iSyncFrame++ % frames.size()];
         vk::Result result;
@@ -62,7 +61,7 @@ struct Swapchain {
 
         // wait for this frame's fence to be signaled and reset it
         result = vk::Result::eTimeout;
-        while (vk::Result::eTimeout == result) result = device.waitForFences(*frame.renderFence, vk::True, UINT64_MAX);
+        while (vk::Result::eTimeout == device.waitForFences(*frame.renderFence, vk::True, UINT64_MAX));
         device.resetFences({ *frame.renderFence });
 
         // acquire image from swapchain
@@ -133,8 +132,8 @@ struct Swapchain {
             .setSwapchains(*swapchain)
             .setWaitSemaphores(*frame.swapWriteSema)
             .setImageIndices(index);
-        result = presentationQueue.presentKHR(presentInfo);
-        if (result == vk::Result::eSuboptimalKHR) fmt::println("Suboptimal swapchain image presentation");
+        try { result = presentationQueue.presentKHR(presentInfo); }
+        catch (vk::OutOfDateKHRError) { bResizeRequested = true; }
     }
 
     vk::raii::SwapchainKHR swapchain = nullptr;
@@ -143,6 +142,7 @@ struct Swapchain {
     vk::Extent2D extent;
     vk::Format format;
     vk::Queue presentationQueue;
+    bool bResizeRequested = true;
 
     // presentation synchronization
     struct FrameData {
