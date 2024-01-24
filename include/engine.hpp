@@ -99,17 +99,16 @@ struct Engine {
                 ImGui::backend::new_frame();
                 ImGui::frontend::display_fps();
                 renderer.render(device, swapchain, queues);
+
+                if (swapchain.bResizeRequested) {
+                    device.waitIdle();
+                    renderer = {};
+                    renderer.init(device, alloc, queues, window.size());
+                    swapchain = {};
+                    swapchain.init(physDevice, device, window, queues);
+                }
             }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            if (swapchain.bResizeRequested) {
-                device.waitIdle();
-                // todo: make proper reset functions
-                renderer = {};
-                renderer.init(device, alloc, queues, window.size());
-                swapchain = {};
-                swapchain.init(physDevice, device, window, queues);
-            }
         }
         device.waitIdle();
         ImGui::backend::shutdown();
@@ -124,11 +123,11 @@ private:
             case SDL_EventType::SDL_EVENT_WINDOW_MINIMIZED: bRendering = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_RESTORED: bRendering = true; break;
             // input handling
-            case SDL_EventType::SDL_EVENT_KEY_UP: Keys::register_key_up(event.key); break;
-            case SDL_EventType::SDL_EVENT_KEY_DOWN: Keys::register_key_down(event.key); break;
-            case SDL_EventType::SDL_EVENT_MOUSE_MOTION: Mouse::register_motion(event.motion); break;
-            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_UP: Mouse::register_button_up(event.button); break;
-            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_DOWN: Mouse::register_button_down(event.button); break;
+            case SDL_EventType::SDL_EVENT_KEY_UP: input::register_key_up(event.key); break;
+            case SDL_EventType::SDL_EVENT_KEY_DOWN: input::register_key_down(event.key); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_MOTION: input::register_motion(event.motion); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_UP: input::register_button_up(event.button); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_DOWN: input::register_button_down(event.button); break;
             case SDL_EventType::SDL_EVENT_WINDOW_FOCUS_LOST: input::flush_all();
             default: break;
         }
