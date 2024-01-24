@@ -9,6 +9,7 @@
 #include <chrono>
 #include <thread>
 //
+#include "input.hpp"
 #include "window.hpp"
 #include "renderer.hpp"
 #include "imgui_impl.hpp"
@@ -90,6 +91,7 @@ struct Engine {
         bRunning = true;
         bRendering = true;
         while(bRunning) {
+            input::flush();
             SDL_Event event;
             while (SDL_PollEvent(&event)) handle_event(event);
 
@@ -115,11 +117,19 @@ struct Engine {
 
 private:
     void handle_event(SDL_Event& event) {
-        if (ImGui::backend::process_event(&event)) return;
+        ImGui::backend::process_event(&event);
         switch (event.type) {
+            // window handling
             case SDL_EventType::SDL_EVENT_QUIT: bRunning = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_MINIMIZED: bRendering = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_RESTORED: bRendering = true; break;
+            // input handling
+            case SDL_EventType::SDL_EVENT_KEY_UP: Keys::register_key_up(event.key); break;
+            case SDL_EventType::SDL_EVENT_KEY_DOWN: Keys::register_key_down(event.key); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_MOTION: Mouse::register_motion(event.motion); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_UP: Mouse::register_button_up(event.button); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_DOWN: Mouse::register_button_down(event.button); break;
+            case SDL_EventType::SDL_EVENT_WINDOW_FOCUS_LOST: input::flush_all();
             default: break;
         }
     }
