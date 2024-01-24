@@ -54,20 +54,17 @@ struct Swapchain {
     }
     void present(vk::raii::Device& device, Image& image, vk::raii::Semaphore& imageSema, uint64_t& semaValue) {
         FrameData& frame = frames[iSyncFrame++ % frames.size()];
+        vk::Result result;
+        uint32_t index; // index into swapchain image array
 
         // wait for this frame's fence to be signaled and reset it
-        while (vk::Result::eTimeout == device.waitForFences({ *frame.renderFence }, vk::True, UINT64_MAX)) {}
+        result = vk::Result::eTimeout;
+        while (vk::Result::eTimeout == result) result = device.waitForFences({ *frame.renderFence }, vk::True, UINT64_MAX);
         device.resetFences({ *frame.renderFence });
 
         // acquire image from swapchain
-        auto [result, index] = swapchain.acquireNextImage(UINT64_MAX, *frame.swapAcquireSema);
-        switch (result) {
-            case vk::Result::eSuboptimalKHR: fmt::println("Suboptimal swapchain image acquisition"); break;
-            case vk::Result::eTimeout: fmt::println("Timeout on swapchain image acquisition"); break;
-            case vk::Result::eNotReady: fmt::println("Swapchain not yet ready"); break;
-            case vk::Result::eSuccess:
-            default: break;
-        }
+        result = vk::Result::eTimeout;
+        while (vk::Result::eTimeout == result) std::tie(result, index) = swapchain.acquireNextImage(UINT64_MAX, *frame.swapAcquireSema);
 
         // restart command buffer
         vk::raii::CommandBuffer& cmd = frame.commandBuffer;
