@@ -11,7 +11,7 @@
 //
 #include "window.hpp"
 #include "renderer.hpp"
-#include "imgui_backend.hpp"
+#include "imgui_impl.hpp"
 #include "vk_wrappers/swapchain.hpp"
 #include "vk_wrappers/queues.hpp"
 
@@ -115,8 +115,7 @@ struct Engine {
 
 private:
     void handle_event(SDL_Event& event) {
-        // if (ImGui::backend::process_event(&event)) return;
-        // ImGui::backend::process_event(&event);
+        if (ImGui::backend::process_event(&event)) return;
         switch (event.type) {
             case SDL_EventType::SDL_EVENT_QUIT: bRunning = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_MINIMIZED: bRendering = false; break;
@@ -124,7 +123,7 @@ private:
             default: break;
         }
     }
-    void set_fullscreen(bool bFullscreen) { // todo
+    void set_fullscreen(bool bFullscreen) {
         SDL_SetWindowFullscreen(window.pWindow, bFullscreen);
         SDL_SyncWindow(window.pWindow);
 
@@ -133,7 +132,7 @@ private:
         swapchain = {};
         swapchain.init(physDevice, device, window, queues);
     }
-    void set_size(int width, int height) { // todo
+    void set_size(int width, int height) {
         SDL_SetWindowSize(window.pWindow, width, height);
         SDL_SyncWindow(window.pWindow);
 
@@ -142,6 +141,7 @@ private:
         swapchain = {};
         swapchain.init(physDevice, device, window, queues);
     }
+
 private:
     vk::raii::Context context;
     vk::raii::Instance instance = nullptr;

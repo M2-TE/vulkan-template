@@ -13,6 +13,7 @@ namespace ImGui {
                 | ImGuiWindowFlags_NoDocking
                 | ImGuiWindowFlags_NoSavedSettings
                 | ImGuiWindowFlags_NoFocusOnAppearing
+                | ImGuiWindowFlags_AlwaysAutoResize
                 | ImGuiWindowFlags_NoNav
                 | ImGuiWindowFlags_NoMove
                 | ImGuiWindowFlags_NoMouseInputs);
