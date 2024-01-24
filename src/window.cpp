@@ -19,7 +19,6 @@
 #define MSG_UTILS_REQUESTED 0
 #endif
 
-static void imgui_clear(); // todo: remove forward decl
 Window::Window(int width, int height) {
     // SDL: init subsystem
     if (SDL_InitSubSystem(SDL_InitFlags::SDL_INIT_VIDEO)) fmt::println("{}", SDL_GetError());

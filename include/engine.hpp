@@ -109,8 +109,8 @@ struct Engine {
                 swapchain.init(physDevice, device, window, queues);
             }
         }
-        ImGui::backend::shutdown();
         device.waitIdle();
+        ImGui::backend::shutdown();
     }
 
 private:
