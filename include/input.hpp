@@ -24,9 +24,9 @@ namespace input {
 	}
 	namespace Mouse {
 		namespace ids {
-			static constexpr uint8_t left = 1;
-			static constexpr uint8_t right = 3;
-			static constexpr uint8_t middle = 2;
+			static constexpr uint8_t left = SDL_BUTTON_LEFT;
+			static constexpr uint8_t right = SDL_BUTTON_RIGHT;
+			static constexpr uint8_t middle = SDL_BUTTON_MIDDLE;
 		}
 		static float x, y;
 		static float dx, dy;
