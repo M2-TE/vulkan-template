@@ -16,11 +16,11 @@ namespace input {
 
 	namespace Keys {
 		static inline bool pressed(SDL_KeyCode code) { return keysPressed.contains(code); }
-		static inline bool pressed(char character) { return keysPressed.contains((SDL_KeyCode)character); }
 		static inline bool down(SDL_KeyCode code) { return keysDown.contains(code); }
-		static inline bool down(char character) { return keysDown.contains((SDL_KeyCode)character); }
 		static inline bool released(SDL_KeyCode code) { return keysReleased.contains(code); }
-		static inline bool released(char character) { return keysReleased.contains((SDL_KeyCode)character); }
+		static inline bool pressed(char character) { return keysPressed.contains(character) || keysPressed.contains(character + 32); }
+		static inline bool down(char character) { return keysDown.contains(character) || keysPressed.contains(character + 32); }
+		static inline bool released(char character) { return keysReleased.contains(character) || keysPressed.contains(character + 32); }
 	}
 	namespace Mouse {
 		namespace ids {
