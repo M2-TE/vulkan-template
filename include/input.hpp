@@ -20,30 +20,30 @@ namespace Input {
 	};
 
 	struct Keys {
-		static inline bool pressed(SDL_KeyCode code) noexcept { return Data::get().keysPressed.contains(code); }
-		static inline bool down(SDL_KeyCode code) noexcept { return Data::get().keysDown.contains(code); }
-		static inline bool released(SDL_KeyCode code) noexcept { return Data::get().keysReleased.contains(code); }
-		static inline bool pressed(char character) noexcept { return Data::get().keysPressed.contains(character) || Data::get().keysPressed.contains(character + 32); }
-		static inline bool down(char character) noexcept { return Data::get().keysDown.contains(character) || Data::get().keysPressed.contains(character + 32); }
-		static inline bool released(char character) noexcept { return Data::get().keysReleased.contains(character) || Data::get().keysPressed.contains(character + 32); }
         static inline bool pressed (std::string_view characters) noexcept {
             for (auto cur = characters.cbegin(); cur < characters.cend(); cur++) {
                 if (pressed(*cur)) return true;
             }
             return false;
         }
+		static inline bool pressed(char character) noexcept { return Data::get().keysPressed.contains(character) || Data::get().keysPressed.contains(character + 32); }
+		static inline bool pressed(SDL_KeyCode code) noexcept { return Data::get().keysPressed.contains(code); }
         static inline bool down(std::string_view characters) noexcept {
             for (auto cur = characters.cbegin(); cur < characters.cend(); cur++) {
                 if (down(*cur)) return true;
             }
             return false;
         }
+		static inline bool down(char character) noexcept { return Data::get().keysDown.contains(character) || Data::get().keysPressed.contains(character + 32); }
+		static inline bool down(SDL_KeyCode code) noexcept { return Data::get().keysDown.contains(code); }
         static inline bool released(std::string_view characters) noexcept {
             for (auto cur = characters.cbegin(); cur < characters.cend(); cur++) {
                 if (released(*cur)) return true;
             }
             return false;
         }
+		static inline bool released(char character) noexcept { return Data::get().keysReleased.contains(character) || Data::get().keysPressed.contains(character + 32); }
+		static inline bool released(SDL_KeyCode code) noexcept { return Data::get().keysReleased.contains(code); }
     };
 	struct Mouse {
 		struct ids { static constexpr uint8_t left = SDL_BUTTON_LEFT, right = SDL_BUTTON_RIGHT, middle = SDL_BUTTON_MIDDLE; };
