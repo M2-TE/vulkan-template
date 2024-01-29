@@ -91,7 +91,7 @@ struct Engine {
         bRunning = true;
         bRendering = true;
         while(bRunning) {
-            input::flush();
+            Input::flush();
             SDL_Event event;
             while (SDL_PollEvent(&event)) handle_event(event);
 
@@ -99,6 +99,8 @@ struct Engine {
                 ImGui::backend::new_frame();
                 ImGui::frontend::display_fps();
                 renderer.render(device, swapchain, queues);
+
+                if (Keys::pressed('f')) fmt::println("YAY");
 
                 if (swapchain.bResizeRequested) {
                     device.waitIdle();
@@ -123,12 +125,12 @@ private:
             case SDL_EventType::SDL_EVENT_WINDOW_MINIMIZED: bRendering = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_RESTORED: bRendering = true; break;
             // input handling
-            case SDL_EventType::SDL_EVENT_KEY_UP: input::register_key_up(event.key); break;
-            case SDL_EventType::SDL_EVENT_KEY_DOWN: input::register_key_down(event.key); break;
-            case SDL_EventType::SDL_EVENT_MOUSE_MOTION: input::register_motion(event.motion); break;
-            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_UP: input::register_button_up(event.button); break;
-            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_DOWN: input::register_button_down(event.button); break;
-            case SDL_EventType::SDL_EVENT_WINDOW_FOCUS_LOST: input::flush_all();
+            case SDL_EventType::SDL_EVENT_KEY_UP: Input::register_key_up(event.key); break;
+            case SDL_EventType::SDL_EVENT_KEY_DOWN: Input::register_key_down(event.key); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_MOTION: Input::register_motion(event.motion); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_UP: Input::register_button_up(event.button); break;
+            case SDL_EventType::SDL_EVENT_MOUSE_BUTTON_DOWN: Input::register_button_down(event.button); break;
+            case SDL_EventType::SDL_EVENT_WINDOW_FOCUS_LOST: Input::flush_all();
             default: break;
         }
     }
