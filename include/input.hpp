@@ -1,6 +1,11 @@
 #pragma once
 #include <SDL3/SDL_events.h>
-#include <imgui.h>
+#if __has_include(<imgui.h>)
+	#include <imgui.h>
+	#define IMGUI_CAPTURE_EVAL ImGui::GetIO().WantCaptureKeyboard
+#else
+	#define IMGUI_CAPTURE_EVAL 0
+#endif
 //
 #include <string_view>
 #include <cstdint>
@@ -68,30 +73,30 @@ namespace Input {
 		Data::get().buttonsDown.clear();
 	}
 	static void register_key_up(SDL_KeyboardEvent& keyEvent) noexcept {
-		if (keyEvent.repeat || ImGui::GetIO().WantCaptureKeyboard) return;
+		if (keyEvent.repeat || IMGUI_CAPTURE_EVAL) return;
 		Data::get().keysReleased.insert(keyEvent.keysym.sym);
 		Data::get().keysDown.erase(keyEvent.keysym.sym);
 	}
 	static void register_key_down(SDL_KeyboardEvent& keyEvent) noexcept {
-		if (keyEvent.repeat || ImGui::GetIO().WantCaptureKeyboard) return;
+		if (keyEvent.repeat || IMGUI_CAPTURE_EVAL) return;
 		Data::get().keysPressed.insert(keyEvent.keysym.sym);
 		Data::get().keysDown.insert(keyEvent.keysym.sym);
+	}
+	static void register_button_up(SDL_MouseButtonEvent& buttonEvent) noexcept {
+		if (IMGUI_CAPTURE_EVAL) return;
+		Data::get().buttonsReleased.insert(buttonEvent.button);
+		Data::get().buttonsDown.erase(buttonEvent.button);
+	}
+	static void register_button_down(SDL_MouseButtonEvent& buttonEvent) noexcept {
+		if (IMGUI_CAPTURE_EVAL) return;
+		Data::get().buttonsPressed.insert(buttonEvent.button);
+		Data::get().buttonsDown.insert(buttonEvent.button);
 	}
 	static void register_motion(SDL_MouseMotionEvent& motionEvent) noexcept {
 		Data::get().dx += motionEvent.xrel;
 		Data::get().dy += motionEvent.yrel;
 		Data::get().x += motionEvent.xrel;
 		Data::get().y += motionEvent.yrel;
-	}
-	static void register_button_up(SDL_MouseButtonEvent& buttonEvent) noexcept {
-		if (ImGui::GetIO().WantCaptureMouse) return;
-		Data::get().buttonsReleased.insert(buttonEvent.button);
-		Data::get().buttonsDown.erase(buttonEvent.button);
-	}
-	static void register_button_down(SDL_MouseButtonEvent& buttonEvent) noexcept {
-		if (ImGui::GetIO().WantCaptureMouse) return;
-		Data::get().buttonsPressed.insert(buttonEvent.button);
-		Data::get().buttonsDown.insert(buttonEvent.button);
 	}
     static void register_event(SDL_Event& event) noexcept {
         switch(event.type) {
@@ -103,5 +108,6 @@ namespace Input {
         }
     }
 }
+#undef IMGUI_CAPTURE_EVAL
 typedef Input::Keys Keys;
 typedef Input::Mouse Mouse;
