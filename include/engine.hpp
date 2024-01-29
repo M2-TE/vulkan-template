@@ -94,21 +94,13 @@ struct Engine {
             Input::flush();
             SDL_Event event;
             while (SDL_PollEvent(&event)) handle_event(event);
+            handle_input();
 
             if (bRendering) {
                 ImGui::backend::new_frame();
                 ImGui::frontend::display_fps();
                 renderer.render(device, swapchain, queues);
-
-                if (Keys::pressed('f')) fmt::println("YAY");
-
-                if (swapchain.bResizeRequested) {
-                    device.waitIdle();
-                    renderer = {};
-                    renderer.init(device, alloc, queues, window.size());
-                    swapchain = {};
-                    swapchain.init(physDevice, device, window, queues);
-                }
+                if (swapchain.bResizeRequested) handle_rebuild();
             }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -124,6 +116,7 @@ private:
             case SDL_EventType::SDL_EVENT_QUIT: bRunning = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_MINIMIZED: bRendering = false; break;
             case SDL_EventType::SDL_EVENT_WINDOW_RESTORED: bRendering = true; break;
+            case SDL_EventType::SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: handle_rebuild(); break;
             // input handling
             case SDL_EventType::SDL_EVENT_KEY_UP: Input::register_key_up(event.key); break;
             case SDL_EventType::SDL_EVENT_KEY_DOWN: Input::register_key_down(event.key); break;
@@ -134,23 +127,16 @@ private:
             default: break;
         }
     }
-    void set_fullscreen(bool bFullscreen) {
-        SDL_SetWindowFullscreen(window.pWindow, bFullscreen);
+    void handle_rebuild() {
         SDL_SyncWindow(window.pWindow);
-
+        device.waitIdle();
         renderer = {};
         renderer.init(device, alloc, queues, window.size());
         swapchain = {};
         swapchain.init(physDevice, device, window, queues);
     }
-    void set_size(int width, int height) {
-        SDL_SetWindowSize(window.pWindow, width, height);
-        SDL_SyncWindow(window.pWindow);
-
-        renderer = {};
-        renderer.init(device, alloc, queues, window.size());
-        swapchain = {};
-        swapchain.init(physDevice, device, window, queues);
+    void handle_input() {
+        if (Keys::pressed(SDLK_F11)) window.toggle_fullscreen();
     }
 
 private:

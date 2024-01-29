@@ -44,6 +44,10 @@ void Window::init(vk::raii::Instance& instance, vk::DebugUtilsMessengerEXT msg) 
     surface = vk::raii::SurfaceKHR(instance, surfaceTemp);
     MSG_UTILS(debugMsg = vk::raii::DebugUtilsMessengerEXT(instance, msg));
 }
+void Window::toggle_fullscreen() {
+    bFullscreen = !bFullscreen;
+    SDL_SetWindowFullscreen(pWindow, bFullscreen);
+}
 vk::Extent2D Window::size() {
     int width = 0;
     int height = 0;
