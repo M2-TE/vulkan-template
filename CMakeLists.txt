@@ -31,23 +31,22 @@ set(SDL_DIRECTX     OFF)
 set(SDL_OPENGL      OFF)
 set(SDL_OPENGLES    OFF)
 # SDL Subsystems
-set(SDL_AUDIO       OFF)
-set(SDL_VIDEO       ON)
-set(SDL_RENDER      OFF)
-set(SDL_JOSTICK     OFF)
-set(SDL_HAPTIC      OFF)
-set(SDL_HIDAPI      OFF)
-set(SDL_POWER       OFF)
-set(SDL_SENSOR      OFF)
+set(SDL_AUDIO   OFF)
+set(SDL_VIDEO   ON)
+set(SDL_RENDER  OFF)
+set(SDL_JOSTICK OFF)
+set(SDL_HAPTIC  OFF)
+set(SDL_HIDAPI  OFF)
+set(SDL_POWER   OFF)
+set(SDL_SENSOR  OFF)
 # GLM
 set(GLM_BUILD_TESTS OFF)
-
-include(FetchContent)
-set(FETCHCONTENT_QUIET OFF) # enable git output for FetchContent steps
 
 # fetch vulkan headers alongside glslang
 find_package(Vulkan REQUIRED COMPONENTS glslangValidator)
 # fetch vulkan-related libraries
+include(FetchContent)
+set(FETCHCONTENT_QUIET OFF) # enable git output for FetchContent steps
 FetchContent_Declare(vk-bootstrap GIT_REPOSITORY "https://github.com/charles-lunarg/vk-bootstrap.git" GIT_TAG "main" GIT_SHALLOW ON)
 FetchContent_Declare(spirv_reflect GIT_REPOSITORY "https://github.com/KhronosGroup/SPIRV-Reflect.git" GIT_TAG "main" GIT_SHALLOW ON SOURCE_SUBDIR "disabled/")
 FetchContent_Declare(vma GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git" GIT_TAG "master" GIT_SHALLOW ON SOURCE_SUBDIR "disabled/")
@@ -58,7 +57,8 @@ FetchContent_Declare(glm GIT_REPOSITORY "https://github.com/g-truc/glm.git" GIT_
 FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(cmrc GIT_REPOSITORY "https://github.com/vector-of-bool/cmrc.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(imgui GIT_REPOSITORY "https://github.com/ocornut/imgui.git" GIT_TAG "docking" GIT_SHALLOW ON)
-FetchContent_MakeAvailable(vk-bootstrap spirv_reflect vma vma_hpp sdl3 glm fmt cmrc imgui)
+FetchContent_Declare(miniaudio GIT_REPOSITORY "https://github.com/mackron/miniaudio.git" GIT_TAG "master" GIT_SHALLOW ON)
+FetchContent_MakeAvailable(vk-bootstrap spirv_reflect vma vma_hpp sdl3 glm fmt cmrc imgui miniaudio)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
 # compile GLSL shaders
@@ -90,17 +90,18 @@ file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*")
 add_executable(${PROJECT_NAME} 
     "${SOURCE_FILES}" 
     "${IMGUI_SOURCES}"
-    "${spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp")
+    "${spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp"
+    "${miniaudio_SOURCE_DIR}/extras/miniaudio_split/miniaudio.c")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
     "${imgui_SOURCE_DIR}/"
+    "${spirv_reflect_SOURCE_DIR}/"
     "${vma_SOURCE_DIR}/include/"
     "${vma_hpp_SOURCE_DIR}/include/"
-    "${spirv_reflect_SOURCE_DIR}/")
+    "${miniaudio_SOURCE_DIR}/extras/miniaudio_split/")
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     "VULKAN_DEBUG_MSG_UTILS"
     "IMGUI_IMPL_VULKAN_NO_PROTOTYPES"
-    "IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING"
     "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC"
     "VULKAN_HPP_NO_TO_STRING"
     "VULKAN_HPP_NO_SPACESHIP_OPERATOR"
