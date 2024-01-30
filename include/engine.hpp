@@ -92,6 +92,7 @@ struct Engine {
     void run() {
         bRunning = true;
         bRendering = true;
+        nFrames = 0;
         while(bRunning) {
             Input::flush();
             SDL_Event event;
@@ -103,6 +104,7 @@ struct Engine {
                 ImGui::frontend::display_fps();
                 renderer.render(device, swapchain, queues);
                 if (swapchain.bResizeRequested) handle_rebuild();
+                nFrames++;
             }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -132,10 +134,12 @@ private:
     void handle_rebuild() {
         SDL_SyncWindow(window.pWindow);
         device.waitIdle();
-        renderer = {};
-        renderer.init(device, alloc, queues, window.size());
-        swapchain = {};
-        swapchain.init(physDevice, device, window, queues);
+        if (window.size() != swapchain.extent) {
+            renderer = {};
+            renderer.init(device, alloc, queues, window.size());
+            swapchain = {};
+            swapchain.init(physDevice, device, window, queues);
+        }
     }
     void handle_input() {
         if (Keys::pressed(SDLK_F11)) window.toggle_fullscreen();
@@ -154,4 +158,5 @@ private:
 
     bool bRunning;
     bool bRendering;
+    size_t nFrames;
 };
