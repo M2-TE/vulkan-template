@@ -44,13 +44,15 @@ struct Engine {
         selector.set_minimum_version(1, 3)
             .add_required_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
             .add_required_extension(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)
-            .set_required_features_13(vk::PhysicalDeviceVulkan13Features()
-                .setDynamicRendering(true)
-                .setSynchronization2(true))
+            //.add_required_extension("VK_KHR_dynamic_rendering_local_read")
+            .set_required_features_11(vk::PhysicalDeviceVulkan11Features())
             .set_required_features_12(vk::PhysicalDeviceVulkan12Features()
                 .setTimelineSemaphore(true)
                 .setBufferDeviceAddress(true)
-                .setDescriptorIndexing(true));
+                .setDescriptorIndexing(true))
+            .set_required_features_13(vk::PhysicalDeviceVulkan13Features()
+                .setDynamicRendering(true)
+                .setSynchronization2(true));
         auto deviceSelection = selector.select();
         if (!deviceSelection) fmt::println("VkBootstrap error: {}", deviceSelection.error().message());
         vkb::PhysicalDevice physicalDeviceVkb = deviceSelection.value();

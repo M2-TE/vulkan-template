@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
-project(vulkan-renderer LANGUAGES CXX)
+project(vulkan-renderer LANGUAGES C CXX)
 
 # Generic CMake Settings
 set(CMAKE_C_STANDARD 17)
@@ -11,44 +11,34 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared instead of static libraries" FORCE)
+set(BUILD_SHARED_LIBS OFF)
 # check for IPO/LTO support
-set(CMAKE_POLICY_DEFAULT_CMP0069 NEW CACHE STRING "Set policy on IPO/LTO" FORCE)
+set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT LTO_ENABLED LANGUAGES CXX)
 message("IPO/LTO enabled: ${LTO_ENABLED}")
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION  ${LTO_ENABLED} CACHE BOOL "Build with Link-time Optimization by default" FORCE)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${LTO_ENABLED})
 
 # SDL Build settings
-set(SDL_SHARED              ON  CACHE BOOL "Build SDL as shared lib" FORCE)
-set(SDL_STATIC              OFF CACHE BOOL "Build SDL as static lib" FORCE)
-set(SDL_TEST_LIBRARY        OFF CACHE BOOL "Build SDL tests" FORCE)
-set(SDL_DISABLE_INSTALL     ON  CACHE BOOL "Disable installation   of SDL3" FORCE)
-set(SDL_DISABLE_UNINSTALL   ON  CACHE BOOL "Disable uninstallation of SDL3" FORCE)
+set(SDL_SHARED              ON)
+set(SDL_STATIC              OFF)
+set(SDL_TEST_LIBRARY        OFF)
+set(SDL_DISABLE_INSTALL     ON)
+set(SDL_DISABLE_UNINSTALL   ON)
 # SDL Graphics API support
-set(SDL_VULKAN     ON  CACHE BOOL "Enable Vulkan support" FORCE)
-set(SDL_DIRECTX    OFF CACHE BOOL "Enable DirectX support" FORCE)
-set(SDL_OPENGL     OFF CACHE BOOL "Enable OpenGL support" FORCE)
-set(SDL_OPENGLES   OFF CACHE BOOL "Enable OpenGL ES support" FORCE)
+set(SDL_VULKAN      ON)
+set(SDL_DIRECTX     OFF)
+set(SDL_OPENGL      OFF)
+set(SDL_OPENGLES    OFF)
 # SDL Subsystems
-set(SDL_ATOMIC     OFF CACHE BOOL "Disable SDL Atomic subsystem" FORCE)
-set(SDL_AUDIO      OFF CACHE BOOL "Disable SDL Audio subsystem" FORCE)
-set(SDL_VIDEO      ON  CACHE BOOL "Disable SDL Video subsystem" FORCE)
-set(SDL_RENDER     OFF CACHE BOOL "Disable SDL Render subsystem" FORCE)
-set(SDL_EVENTS     ON  CACHE BOOL "Disable SDL Events subsystem" FORCE)
-set(SDL_JOSTICK    OFF CACHE BOOL "Disable SDL Joystick subsystem" FORCE)
-set(SDL_HAPTIC     OFF CACHE BOOL "Disable SDL Haptic subsystem" FORCE)
-set(SDL_HIDAPI     ON  CACHE BOOL "Disable SDL Hidapi subsystem" FORCE)
-set(SDL_POWER      OFF CACHE BOOL "Disable SDL Power subsystem" FORCE)
-set(SDL_THREADS    ON  CACHE BOOL "Disable SDL Threads subsystem" FORCE)
-set(SDL_TIMERS     OFF CACHE BOOL "Disable SDL Timers subsystem" FORCE)
-set(SDL_FILE       ON  CACHE BOOL "Disable SDL File subsystem" FORCE)
-set(SDL_LOADSO     ON  CACHE BOOL "Disable SDL Loadso subsystem" FORCE)
-set(SDL_CPUINFO    OFF CACHE BOOL "Disable SDL CPUinfo subsystem" FORCE)
-set(SDL_FILESYSTEM ON  CACHE BOOL "Disable SDL Filesystem subsystem" FORCE)
-set(SDL_SENSOR     OFF CACHE BOOL "Disable SDL Sensor subsystem" FORCE)
-set(SDL_LOCALE     ON  CACHE BOOL "Disable SDL Locale subsystem" FORCE)
-set(SDL_MISC       ON  CACHE BOOL "Disable SDL Misc subsystem" FORCE)
+set(SDL_AUDIO       OFF)
+set(SDL_VIDEO       ON)
+set(SDL_RENDER      OFF)
+set(SDL_JOSTICK     OFF)
+set(SDL_HAPTIC      OFF)
+set(SDL_HIDAPI      OFF)
+set(SDL_POWER       OFF)
+set(SDL_SENSOR      OFF)
 # GLM
 set(GLM_BUILD_TESTS OFF)
 
@@ -61,14 +51,14 @@ find_package(Vulkan REQUIRED COMPONENTS glslangValidator)
 FetchContent_Declare(vk-bootstrap GIT_REPOSITORY "https://github.com/charles-lunarg/vk-bootstrap.git" GIT_TAG "main" GIT_SHALLOW ON)
 FetchContent_Declare(spirv_reflect GIT_REPOSITORY "https://github.com/KhronosGroup/SPIRV-Reflect.git" GIT_TAG "main" GIT_SHALLOW ON SOURCE_SUBDIR "disabled/")
 FetchContent_Declare(vma GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git" GIT_TAG "master" GIT_SHALLOW ON SOURCE_SUBDIR "disabled/")
-FetchContent_Declare(vma-hpp GIT_REPOSITORY "https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git" GIT_TAG "master" GIT_SHALLOW ON GIT_SUBMODULES "" SOURCE_SUBDIR "disabled/")
+FetchContent_Declare(vma_hpp GIT_REPOSITORY "https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git" GIT_TAG "master" GIT_SHALLOW ON GIT_SUBMODULES "" SOURCE_SUBDIR "disabled/")
 # fetch misc libraries
 FetchContent_Declare(sdl3 GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git" GIT_TAG "main" GIT_SHALLOW ON)
-FetchContent_Declare(glm GIT_REPOSITORY "https://github.com/g-truc/glm.git" GIT_TAG "bf71a834948186f4097caa076cd2663c69a10e1e" GIT_SHALLOW ON)
+FetchContent_Declare(glm GIT_REPOSITORY "https://github.com/g-truc/glm.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(cmrc GIT_REPOSITORY "https://github.com/vector-of-bool/cmrc.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(imgui GIT_REPOSITORY "https://github.com/ocornut/imgui.git" GIT_TAG "docking" GIT_SHALLOW ON)
-FetchContent_MakeAvailable(vk-bootstrap spirv_reflect vma vma-hpp sdl3 glm fmt cmrc imgui)
+FetchContent_MakeAvailable(vk-bootstrap spirv_reflect vma vma_hpp sdl3 glm fmt cmrc imgui)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
 # compile GLSL shaders
@@ -90,10 +80,6 @@ endforeach(GLSL)
 add_custom_target(compile-shaders DEPENDS "${SPIRV_BINARY_FILES}")
 cmrc_add_resource_library(shaders ALIAS cmrc::shaders WHENCE "${CMAKE_CURRENT_BINARY_DIR}/shaders/" "${SPIRV_BINARY_FILES}")
 
-# compile spirv_reflect as its own library
-add_library(spirv_reflect STATIC "${spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp")
-target_include_directories(spirv_reflect PUBLIC "${spirv_reflect_SOURCE_DIR}/")
-
 # gather ImGui sources
 file(GLOB IMGUI_SOURCES CONFIGURE_DEPENDS "${imgui_SOURCE_DIR}/*.cpp")
 list(APPEND IMGUI_SOURCES "${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp")
@@ -103,12 +89,14 @@ list(APPEND IMGUI_SOURCES "${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp")
 file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/src/*")
 add_executable(${PROJECT_NAME} 
     "${SOURCE_FILES}" 
-    "${IMGUI_SOURCES}")
+    "${IMGUI_SOURCES}"
+    "${spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
     "${imgui_SOURCE_DIR}/"
     "${vma_SOURCE_DIR}/include/"
-    "${vma-hpp_SOURCE_DIR}/include/")
+    "${vma_hpp_SOURCE_DIR}/include/"
+    "${spirv_reflect_SOURCE_DIR}/")
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     "VULKAN_DEBUG_MSG_UTILS"
     "IMGUI_IMPL_VULKAN_NO_PROTOTYPES"
@@ -121,7 +109,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Headers
     vk-bootstrap::vk-bootstrap
-    spirv_reflect
     SDL3::SDL3
     glm::glm
     fmt::fmt
