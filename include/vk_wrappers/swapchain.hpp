@@ -146,7 +146,7 @@ struct Swapchain {
     vk::Queue presentationQueue;
     bool bResizeRequested = true;
 
-    // presentation synchronization
+private:
     struct FrameData {
         // command recording
         vk::raii::CommandPool commandPool = nullptr;
