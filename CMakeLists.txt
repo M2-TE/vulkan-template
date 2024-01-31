@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.27)
 project(vulkan-renderer LANGUAGES C CXX)
 
+# disallow option() from overwriting set()
+set (CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 # Generic CMake Settings
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 23)
@@ -16,7 +19,7 @@ set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT LTO_ENABLED LANGUAGES CXX)
-message("IPO/LTO enabled: ${LTO_ENABLED}")
+message(STATUS "IPO/LTO enabled: ${LTO_ENABLED}")
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${LTO_ENABLED})
 
 # SDL Build settings
@@ -40,7 +43,10 @@ set(SDL_HIDAPI  OFF)
 set(SDL_POWER   OFF)
 set(SDL_SENSOR  OFF)
 # GLM
-set(GLM_BUILD_TESTS OFF)
+set(GLM_DISABLE_AUTO_DETECTION  OFF)
+set(GLM_ENABLE_CXX_20           ON)
+set(GLM_ENABLE_FAST_MATH        ON)
+set(GLM_FORCE_PURE              OFF)
 
 # fetch vulkan headers alongside glslang
 find_package(Vulkan REQUIRED COMPONENTS glslangValidator)
@@ -58,7 +64,18 @@ FetchContent_Declare(fmt GIT_REPOSITORY "https://github.com/fmtlib/fmt.git" GIT_
 FetchContent_Declare(cmrc GIT_REPOSITORY "https://github.com/vector-of-bool/cmrc.git" GIT_TAG "master" GIT_SHALLOW ON)
 FetchContent_Declare(imgui GIT_REPOSITORY "https://github.com/ocornut/imgui.git" GIT_TAG "docking" GIT_SHALLOW ON)
 FetchContent_Declare(miniaudio GIT_REPOSITORY "https://github.com/mackron/miniaudio.git" GIT_TAG "master" GIT_SHALLOW ON)
-FetchContent_MakeAvailable(vk-bootstrap spirv_reflect vma vma_hpp sdl3 glm fmt cmrc imgui miniaudio)
+FetchContent_MakeAvailable(vk-bootstrap spirv_reflect vma vma_hpp sdl3 fmt cmrc imgui miniaudio)
+
+set(GLM_ENABLE_SIMD_SSE     ${SDL_SSE})
+set(GLM_ENABLE_SIMD_SSE2    ${SDL_SSE2})
+set(GLM_ENABLE_SIMD_SSE3    ${SDL_SSE3})
+set(GLM_ENABLE_SIMD_SSSE3   ${SDL_SSSE3})
+set(GLM_ENABLE_SIMD_SSE4_1  ${SDL_SSE4_1})
+set(GLM_ENABLE_SIMD_SSE4_2  ${SDL_SSE4_2})
+set(GLM_ENABLE_SIMD_AVX     ${SDL_AVX})
+set(GLM_ENABLE_SIMD_AVX2    ${SDL_AVX2})
+set(GLM_ENABLE_SIMD_AVX512F ${SDL_AVX512F})
+FetchContent_MakeAvailable(glm)
 set(FETCHCONTENT_FULLY_DISCONNECTED ON CACHE BOOL "faster config speed when enabled" FORCE)
 
 # compile GLSL shaders
