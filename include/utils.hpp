@@ -3,7 +3,9 @@
 
 namespace utils {
     inline vk::ImageSubresourceRange default_subresource_range() {
-        return vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, vk::RemainingMipLevels, 0, vk::RemainingArrayLayers);
+        return vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 
+            0, vk::RemainingMipLevels, 
+            0, vk::RemainingArrayLayers);
     }
 
     // transition into a write layout (from read)

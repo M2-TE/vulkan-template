@@ -20,7 +20,6 @@ struct Engine {
     void run() {
         bRunning = true;
         bRendering = true;
-        nFrames = 0;
         while(bRunning) {
             Input::flush();
             SDL_Event event;
@@ -32,7 +31,6 @@ struct Engine {
                 ImGui::frontend::display_fps();
                 renderer.render(device, swapchain, queues);
                 if (swapchain.bResizeRequested) handle_rebuild();
-                nFrames++;
             }
             else std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -86,5 +84,4 @@ private:
 
     bool bRunning;
     bool bRendering;
-    size_t nFrames;
 };

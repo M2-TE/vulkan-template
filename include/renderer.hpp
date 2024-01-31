@@ -6,7 +6,6 @@
 #include <array>
 #include <cmath>
 //
-#include "utils.hpp"
 #include "vk_wrappers/queues.hpp"
 #include "vk_wrappers/swapchain.hpp"
 #include "vk_wrappers/image.hpp"

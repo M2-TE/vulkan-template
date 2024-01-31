@@ -1,6 +1,5 @@
 #pragma once
 #include <vulkan/vulkan_raii.hpp>
-#include "vk_wrappers/queues.hpp"
 
 class SDL_Window;
 struct Window {
