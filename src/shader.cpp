@@ -1,26 +1,26 @@
 #include <spirv_reflect.h>
 #include <cmrc/cmrc.hpp>
-CMRC_DECLARE(shaders);
 #include <fmt/base.h>
+#undef VULKAN_HPP_NO_TO_STRING
+#include <vulkan/vulkan_raii.hpp>
+//
+#include <unordered_map>
+#include <span>
 //
 #include "vk_wrappers/shader.hpp"
+CMRC_DECLARE(shaders);
 
-Shader::Shader(std::string_view path): path(path) {}
-void Shader::init(vk::raii::Device& device) {
+static inline std::pair<const uint32_t*, size_t> read_data(std::string& path) {
     cmrc::embedded_filesystem fs = cmrc::shaders::get_filesystem();
     if (!fs.exists(path)) {
         fmt::println("could not find shader: {}", path);
         exit(-1);
     }
     cmrc::file file = fs.open(path);
-    const uint32_t* pCode = reinterpret_cast<const uint32_t*>(file.cbegin());
-
-    // reflect spir-v shader contents
-    const spv_reflect::ShaderModule reflection(file.size(), pCode);
-    stage = (vk::ShaderStageFlagBits)reflection.GetShaderStage();
-
-    // enumerate sets
-    uint32_t nDescSets = 0;
+    return std::pair(reinterpret_cast<const uint32_t*>(file.cbegin()), file.size());
+}
+static inline std::vector<SpvReflectDescriptorSet*> enumDescSets(const spv_reflect::ShaderModule& reflection) {
+    uint32_t nDescSets;
     SpvReflectResult result;
     std::vector<SpvReflectDescriptorSet*> reflDescSets;
     result = reflection.EnumerateDescriptorSets(&nDescSets, nullptr);
@@ -28,43 +28,62 @@ void Shader::init(vk::raii::Device& device) {
     reflDescSets.resize(nDescSets);
     result = reflection.EnumerateDescriptorSets(&nDescSets, reflDescSets.data());
     if (result != SPV_REFLECT_RESULT_SUCCESS) fmt::println("shader reflection error: {}", (uint32_t)result);
-
-    // enumerate bindings
-    uint32_t nDescBinds = 0;
-    std::vector<SpvReflectDescriptorBinding*> descBinds;
+    return reflDescSets;
+}
+static inline std::vector<SpvReflectDescriptorBinding*> enumDescBindings(const spv_reflect::ShaderModule& reflection) {
+    uint32_t nDescBinds;
+    SpvReflectResult result;
+    std::vector<SpvReflectDescriptorBinding*> reflDescBinds;
     result = reflection.EnumerateDescriptorBindings(&nDescBinds, nullptr);
     if (result != SPV_REFLECT_RESULT_SUCCESS) fmt::println("shader reflection error: {}", (uint32_t)result);
-    descBinds.resize(nDescBinds);
-    result = reflection.EnumerateDescriptorBindings(&nDescBinds, descBinds.data());
+    reflDescBinds.resize(nDescBinds);
+    result = reflection.EnumerateDescriptorBindings(&nDescBinds, reflDescBinds.data());
     if (result != SPV_REFLECT_RESULT_SUCCESS) fmt::println("shader reflection error: {}", (uint32_t)result);
-    fmt::println("sets: {}, bindings: {}", nDescSets, nDescBinds);
-
-    // query which descriptor types will be allocated
-    if (nDescSets == 0) return;
-    std::vector<vk::DescriptorPoolSize> poolSizes;
+    return reflDescBinds;
+}
+static inline std::vector<vk::DescriptorPoolSize> getPoolSizes(std::span<SpvReflectDescriptorBinding*> reflDescBinds) {
     std::unordered_map<vk::DescriptorType, uint32_t> bindingLookup;
     // tally count of all bind types
-    for (const auto& descBind : descBinds) {
+    for (const auto& descBind : reflDescBinds) {
         auto [resa, resb] = bindingLookup.try_emplace((vk::DescriptorType)descBind->descriptor_type, 1);
         if (!resb) resa->second++;
     }
+    std::vector<vk::DescriptorPoolSize> poolSizes;
     poolSizes.reserve(bindingLookup.size());
     for (const auto& pair : bindingLookup) poolSizes.emplace_back(pair.first, pair.second);
-    // create pool
-    vk::DescriptorPoolCreateInfo poolCreateInfo = vk::DescriptorPoolCreateInfo()
-        .setMaxSets(nDescSets)
-        .setPoolSizes(poolSizes);
+    return poolSizes;
+}
+
+Shader::Shader(std::string_view path): path(path) {}
+void Shader::init(vk::raii::Device& device) {
+    // reflect spir-v shader contents
+    auto [pData, size] = read_data(path);
+    const spv_reflect::ShaderModule reflection(size, pData);
+
+    // stage, sets, bindings
+    stage = (vk::ShaderStageFlags)reflection.GetShaderStage();
+    std::vector<SpvReflectDescriptorSet*> reflDescSets = enumDescSets(reflection);
+    std::vector<SpvReflectDescriptorBinding*> reflDescBinds = enumDescBindings(reflection);
+    if (reflDescSets.size() == 0) return;
+    fmt::println("{}: {} set(s) and {} binding(s)", path, reflDescSets.size(), reflDescBinds.size());
+
+    // create descriptor pool
+    std::vector<vk::DescriptorPoolSize> poolSizes = getPoolSizes(reflDescBinds);
+    vk::DescriptorPoolCreateInfo poolCreateInfo = vk::DescriptorPoolCreateInfo({}, reflDescSets.size(), poolSizes);
     pool = device.createDescriptorPool(poolCreateInfo);
 
     // enumerate all sets
-    descSetLayouts.reserve(nDescSets);
+    descSetLayouts.reserve(reflDescSets.size());
     for (const auto& set : reflDescSets) {
-
         // enumerate all bindings for current set
         std::vector<vk::DescriptorSetLayoutBinding> bindings(set->binding_count);
         for (uint32_t i = 0; i < set->binding_count; i++) {
             SpvReflectDescriptorBinding* pBinding = set->bindings[i];
-            fmt::println("{} at binding: {}", pBinding->name, pBinding->binding);
+            fmt::println("\tset {} | binding {}: {} {}", 
+                    pBinding->set, 
+                    pBinding->binding,
+                    vk::to_string((vk::DescriptorType)pBinding->descriptor_type), 
+                    pBinding->name);
             bindings[i].setBinding(pBinding->binding)
                 .setDescriptorCount(pBinding->count)
                 .setStageFlags((vk::ShaderStageFlagBits)reflection.GetShaderStage())
@@ -72,8 +91,7 @@ void Shader::init(vk::raii::Device& device) {
         }
 
         // create set layout from all bindings
-        vk::DescriptorSetLayoutCreateInfo descLayoutInfo = vk::DescriptorSetLayoutCreateInfo()
-            .setBindings(bindings);
+        vk::DescriptorSetLayoutCreateInfo descLayoutInfo = vk::DescriptorSetLayoutCreateInfo({}, bindings);
         descSetLayouts.emplace_back(device.createDescriptorSetLayout(descLayoutInfo));
     }
 
@@ -86,17 +104,9 @@ void Shader::init(vk::raii::Device& device) {
     descSets = (*device).allocateDescriptorSets(allocInfo);
 }
 vk::raii::ShaderModule Shader::compile(vk::raii::Device& device) {
-    cmrc::embedded_filesystem fs = cmrc::shaders::get_filesystem();
-    if (!fs.exists(path)) {
-        fmt::println("could not find shader: {}", path);
-        exit(-1);
-    }
-    cmrc::file file = fs.open(path);
-    const uint32_t* pCode = reinterpret_cast<const uint32_t*>(file.cbegin());
-
-    // load spir-v shader
+    auto [pData, size] = read_data(path);
     vk::ShaderModuleCreateInfo shaderInfo = vk::ShaderModuleCreateInfo()
-        .setPCode(pCode)
-        .setCodeSize(file.size());
+        .setPCode(pData)
+        .setCodeSize(size);
     return device.createShaderModule(shaderInfo);
 }

@@ -2,7 +2,6 @@
 #include <vulkan/vulkan_raii.hpp>
 //
 #include <string_view>
-// #include <unordered_map>
 //
 #include "vk_wrappers/image.hpp"
 
