@@ -6,7 +6,6 @@
 #include "vk_wrappers/swapchain.hpp"
 #include "vk_wrappers/imgui_impl.hpp"
 #include "window.hpp"
-#include "utils.hpp"
 
 void Swapchain::init(vk::raii::PhysicalDevice& physDevice, vk::raii::Device& device, Window& window, Queues& queues) {
     bResizeRequested = false;
@@ -73,10 +72,21 @@ void Swapchain::present(vk::raii::Device& device, Image& image, vk::raii::Semaph
     cmd.begin(cmdBeginInfo);
 
     // transition image layouts for upcoming blit
-    utils::transition_layout_rw(cmd, images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+    image.transition_layout_w_to_r(cmd, vk::ImageLayout::eTransferSrcOptimal,
         vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eBlit);
-    image.transition_layout_wr(cmd, vk::ImageLayout::eTransferSrcOptimal,
-        vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eBlit);
+    vk::ImageMemoryBarrier2 imageBarrier = vk::ImageMemoryBarrier2()
+        .setSrcStageMask(vk::PipelineStageFlagBits2::eAllCommands)
+        .setSrcAccessMask(vk::AccessFlagBits2::eMemoryRead)
+        .setDstStageMask(vk::PipelineStageFlagBits2::eBlit)
+        .setDstAccessMask(vk::AccessFlagBits2::eMemoryWrite)
+        .setOldLayout(vk::ImageLayout::eUndefined)
+        .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+        .setSubresourceRange(vk::ImageSubresourceRange(
+            vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+        .setImage(images[index]);
+    vk::DependencyInfo depInfo = vk::DependencyInfo()
+        .setImageMemoryBarriers(imageBarrier);
+    cmd.pipelineBarrier2(depInfo);
 
     // copy input image to swapchain image
     vk::BlitImageInfo2 blitInfo = vk::BlitImageInfo2()
@@ -93,13 +103,35 @@ void Swapchain::present(vk::raii::Device& device, Image& image, vk::raii::Semaph
     cmd.blitImage2(blitInfo);
     
     // draw ImGui UI directly onto swapchain image
-    utils::transition_layout_rw(cmd, images[index], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eBlit, vk::PipelineStageFlagBits2::eAllGraphics);
+    imageBarrier = vk::ImageMemoryBarrier2()
+        .setSrcStageMask(vk::PipelineStageFlagBits2::eBlit)
+        .setSrcAccessMask(vk::AccessFlagBits2::eMemoryRead)
+        .setDstStageMask(vk::PipelineStageFlagBits2::eAllCommands)
+        .setDstAccessMask(vk::AccessFlagBits2::eMemoryWrite)
+        .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+        .setNewLayout(vk::ImageLayout::eAttachmentOptimal)
+        .setSubresourceRange(vk::ImageSubresourceRange(
+            vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+        .setImage(images[index]);
+    depInfo = vk::DependencyInfo()
+        .setImageMemoryBarriers(imageBarrier);
+    cmd.pipelineBarrier2(depInfo);
     ImGui::backend::draw(cmd, imageViews[index], vk::ImageLayout::eAttachmentOptimal, extent);
 
     // finalize swapchain image
-    utils::transition_layout_wr(cmd, images[index], vk::ImageLayout::eAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR,
-        vk::PipelineStageFlagBits2::eBlit, vk::PipelineStageFlagBits2::eAllCommands);
+    imageBarrier = vk::ImageMemoryBarrier2()
+        .setSrcStageMask(vk::PipelineStageFlagBits2::eAllCommands)
+        .setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
+        .setDstStageMask(vk::PipelineStageFlagBits2::eAllCommands)
+        .setDstAccessMask(vk::AccessFlagBits2::eMemoryRead)
+        .setOldLayout(vk::ImageLayout::eAttachmentOptimal)
+        .setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+        .setSubresourceRange(vk::ImageSubresourceRange(
+            vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+        .setImage(images[index]);
+    depInfo = vk::DependencyInfo()
+        .setImageMemoryBarriers(imageBarrier);
+    cmd.pipelineBarrier2(depInfo);
     cmd.end();
 
     // submit command buffer to graphics queue

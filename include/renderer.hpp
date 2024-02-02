@@ -71,13 +71,10 @@ struct Renderer {
     
 private:
     void draw(vk::raii::Device& device, vk::raii::CommandBuffer& cmd) {
-        // transition images to write only:
-        // utils::transition_layout_rw(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eAttachmentOptimal);
-        // transition images to read only:
-        // utils::transition_layout_wr(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eReadOnlyOptimal);
-
-        image.transition_layout_rw(cmd, vk::ImageLayout::eGeneral,
-            vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eComputeShader);
+        // utils::transition_layout_r_to_w(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eAttachmentOptimal);
+        // utils::transition_layout_w_to_r(cmd, swapchain.images[index], vk::ImageLayout::eUndefined, vk::ImageLayout::eReadOnlyOptimal);
+        
+        image.transition_layout_r_to_w(cmd, vk::ImageLayout::eGeneral, vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eComputeShader);
         computePipe.execute(cmd, std::ceil(image.extent.width / 16.0f), std::ceil(image.extent.height / 16.0f), 1);
     }
 
