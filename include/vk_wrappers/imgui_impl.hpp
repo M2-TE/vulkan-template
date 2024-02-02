@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan_raii.hpp>
+#include <SDL3/SDL_events.h>
 #include <imgui.h>
 //
 #include "vk_wrappers/queues.hpp"

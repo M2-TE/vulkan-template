@@ -11,7 +11,7 @@
 #include "input.hpp"
 #include "window.hpp"
 #include "renderer.hpp"
-#include "imgui_impl.hpp"
+#include "vk_wrappers/imgui_impl.hpp"
 #include "vk_wrappers/swapchain.hpp"
 #include "vk_wrappers/queues.hpp"
 
