@@ -35,8 +35,7 @@ namespace Pipelines {
 		vk::raii::PipelineLayout layout = nullptr;
 	};
 	struct Graphics {
-		Graphics(std::string_view path_vs, std::string_view path_ps): vs(path_vs), ps(path_ps) {}
-
-		Shader vs, ps;
+		Graphics(std::string_view path_vs, std::string_view path_fs): vs(std::string(path_vs).append(".spv")), fs(std::string(path_fs).append(".spv")) {}
+		Shader vs, fs;
 	};
 }

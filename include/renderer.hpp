@@ -95,5 +95,5 @@ private:
     uint32_t iFrame = 0;
 
     Image image;
-    Pipelines::Compute computePipe = {"gradient.comp"};
+    Pipelines::Compute computePipe = Pipelines::Compute("gradient.comp");
 };
