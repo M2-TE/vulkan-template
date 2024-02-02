@@ -21,16 +21,22 @@ void Shader::init(vk::raii::Device& device) {
 
     // enumerate sets
     uint32_t nDescSets = 0;
+    SpvReflectResult result;
     std::vector<SpvReflectDescriptorSet*> reflDescSets;
-    assert(SPV_REFLECT_RESULT_SUCCESS == reflection.EnumerateDescriptorSets(&nDescSets, nullptr));
+    result = reflection.EnumerateDescriptorSets(&nDescSets, nullptr);
+    if (result != SPV_REFLECT_RESULT_SUCCESS) fmt::println("shader reflection error: {}", (uint32_t)result);
     reflDescSets.resize(nDescSets);
-    assert(SPV_REFLECT_RESULT_SUCCESS == reflection.EnumerateDescriptorSets(&nDescSets, reflDescSets.data()));
+    result = reflection.EnumerateDescriptorSets(&nDescSets, reflDescSets.data());
+    if (result != SPV_REFLECT_RESULT_SUCCESS) fmt::println("shader reflection error: {}", (uint32_t)result);
+
     // enumerate bindings
     uint32_t nDescBinds = 0;
     std::vector<SpvReflectDescriptorBinding*> descBinds;
-    assert(SPV_REFLECT_RESULT_SUCCESS == reflection.EnumerateDescriptorBindings(&nDescBinds, nullptr));
+    result = reflection.EnumerateDescriptorBindings(&nDescBinds, nullptr);
+    if (result != SPV_REFLECT_RESULT_SUCCESS) fmt::println("shader reflection error: {}", (uint32_t)result);
     descBinds.resize(nDescBinds);
-    assert(SPV_REFLECT_RESULT_SUCCESS == reflection.EnumerateDescriptorBindings(&nDescBinds, descBinds.data()));
+    result = reflection.EnumerateDescriptorBindings(&nDescBinds, descBinds.data());
+    if (result != SPV_REFLECT_RESULT_SUCCESS) fmt::println("shader reflection error: {}", (uint32_t)result);
     fmt::println("sets: {}, bindings: {}", nDescSets, nDescBinds);
 
     // query which descriptor types will be allocated

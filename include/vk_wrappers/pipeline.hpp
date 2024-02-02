@@ -1,7 +1,7 @@
 #pragma once
 #include <string_view>
 //
-#include "vk_wrappers/shader.hpp" // todo: hide the shader from outside?
+#include "vk_wrappers/shader.hpp"
 
 namespace Pipelines {
 	struct Compute {
@@ -10,13 +10,15 @@ namespace Pipelines {
 			cs.init(device);
 			vk::raii::ShaderModule csModule = cs.compile(device);
 
+			// create layouts
 			std::vector<vk::DescriptorSetLayout> layouts;
 			for (const auto& set : cs.descSetLayouts) layouts.emplace_back(*set);
-			vk::PipelineLayoutCreateInfo layoutInfo = vk::PipelineLayoutCreateInfo()
-				.setSetLayouts(layouts);
+			vk::PipelineLayoutCreateInfo layoutInfo = vk::PipelineLayoutCreateInfo({}, layouts);
 			layout = device.createPipelineLayout(layoutInfo);
+
+			// create pipeline
 			vk::PipelineShaderStageCreateInfo stageInfo = vk::PipelineShaderStageCreateInfo()
-				.setModule(csModule)
+				.setModule(*csModule)
 				.setStage(vk::ShaderStageFlagBits::eCompute)
 				.setPName("main");
 			vk::ComputePipelineCreateInfo pipeInfo = vk::ComputePipelineCreateInfo()
