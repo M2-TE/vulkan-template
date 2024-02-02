@@ -4,16 +4,11 @@
 #include "vk_wrappers/shader.hpp" // todo: hide the shader from outside?
 
 namespace Pipelines {
-	struct Pipeline {
-		// todo?
-	};
-	struct Compute: private Pipeline {
-		Compute(std::string_view path_cs): cs(std::string(path_cs).append(".spv")) {
-
-		}
+	struct Compute {
+		Compute(std::string_view path_cs): cs(std::string(path_cs).append(".spv")) {}
 		void init(vk::raii::Device& device) {
-			// vk::raii::ShaderModule csModule = cs.compile(device);
 			cs.init(device);
+			vk::raii::ShaderModule csModule = cs.compile(device);
 
 			std::vector<vk::DescriptorSetLayout> layouts;
 			for (const auto& set : cs.descSetLayouts) layouts.emplace_back(*set);
@@ -21,7 +16,7 @@ namespace Pipelines {
 				.setSetLayouts(layouts);
 			layout = device.createPipelineLayout(layoutInfo);
 			vk::PipelineShaderStageCreateInfo stageInfo = vk::PipelineShaderStageCreateInfo()
-				.setModule(*cs.shader) // todo
+				.setModule(csModule)
 				.setStage(vk::ShaderStageFlagBits::eCompute)
 				.setPName("main");
 			vk::ComputePipelineCreateInfo pipeInfo = vk::ComputePipelineCreateInfo()
@@ -39,10 +34,8 @@ namespace Pipelines {
 		vk::raii::Pipeline pipeline = nullptr;
 		vk::raii::PipelineLayout layout = nullptr;
 	};
-	struct Graphics: private Pipeline {
-		Graphics(std::string_view path_vs, std::string_view path_ps): vs(path_vs), ps(path_ps) {
-
-		}
+	struct Graphics {
+		Graphics(std::string_view path_vs, std::string_view path_ps): vs(path_vs), ps(path_ps) {}
 
 		Shader vs, ps;
 	};

@@ -15,12 +15,6 @@ void Shader::init(vk::raii::Device& device) {
     cmrc::file file = fs.open(path);
     const uint32_t* pCode = reinterpret_cast<const uint32_t*>(file.cbegin());
 
-    // load spir-v shader
-    vk::ShaderModuleCreateInfo shaderInfo = vk::ShaderModuleCreateInfo()
-        .setPCode(pCode)
-        .setCodeSize(file.size());
-    shader = compile(device);
-
     // reflect spir-v shader contents
     const spv_reflect::ShaderModule reflection(file.size(), pCode);
     stage = (vk::ShaderStageFlagBits)reflection.GetShaderStage();
@@ -85,7 +79,6 @@ void Shader::init(vk::raii::Device& device) {
         .setSetLayouts(layouts);
     descSets = (*device).allocateDescriptorSets(allocInfo);
 }
-
 vk::raii::ShaderModule Shader::compile(vk::raii::Device& device) {
     cmrc::embedded_filesystem fs = cmrc::shaders::get_filesystem();
     if (!fs.exists(path)) {

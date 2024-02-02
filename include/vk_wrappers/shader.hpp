@@ -8,7 +8,7 @@
 
 struct Shader {
 	Shader(std::string_view path);
-    void init(vk::raii::Device& device); // todo: device needed?
+    void init(vk::raii::Device& device);
     vk::raii::ShaderModule compile(vk::raii::Device& device);
 
     // todo: different layout/type based on shader stage
@@ -27,7 +27,6 @@ struct Shader {
 
 	std::string path;
 	vk::ShaderStageFlags stage;
-	vk::raii::ShaderModule shader = nullptr; // REMOVE
 	vk::raii::DescriptorPool pool = nullptr;
 	std::vector<vk::DescriptorSet> descSets;
     std::vector<vk::raii::DescriptorSetLayout> descSetLayouts;

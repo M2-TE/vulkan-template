@@ -41,7 +41,7 @@ struct Renderer {
 
         // create shader pipeline
         computePipe.init(device);
-        computePipe.cs.write_descriptor(image, 0, 0); // todo: encapsulate this better
+        computePipe.cs.write_descriptor(image, 0, 0);
     }
     void render(vk::raii::Device& device, Swapchain& swapchain, Queues& queues) {
         FrameData& frame = frames[iFrame++ % frames.size()];
@@ -98,8 +98,5 @@ private:
     uint32_t iFrame = 0;
 
     Image image;
-    // Shader shader = Shader("gradient.comp");
     Pipelines::Compute computePipe = {"gradient.comp"};
-    vk::raii::Pipeline pipeline = nullptr; // REMOVE
-    vk::raii::PipelineLayout layout = nullptr; // REMOVE
 };
