@@ -9,7 +9,7 @@
 #include "vk_wrappers/queues.hpp"
 #include "vk_wrappers/swapchain.hpp"
 #include "vk_wrappers/image.hpp"
-#include "vk_wrappers/shader.hpp"
+#include "vk_wrappers/pipeline.hpp"
 
 struct Renderer {
     void init(vk::raii::Device& device, vma::UniqueAllocator& alloc, Queues& queues, vk::Extent2D extent) {
@@ -39,23 +39,9 @@ struct Renderer {
         vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage;
         image = Image(device, alloc, vk::Extent3D(extent, 1), vk::Format::eR16G16B16A16Sfloat, usage, vk::ImageAspectFlagBits::eColor);
 
-        // create shader pipeline (TODO: move more of this to pipeline.hpp or something)
-        shader.init(device);
-        shader.write_descriptor(image, 0, 0);
-
-        std::vector<vk::DescriptorSetLayout> layouts;
-        for (const auto& set : shader.descSetLayouts) layouts.emplace_back(*set);
-        vk::PipelineLayoutCreateInfo layoutInfo = vk::PipelineLayoutCreateInfo()
-            .setSetLayouts(layouts);
-        layout = device.createPipelineLayout(layoutInfo);
-        vk::PipelineShaderStageCreateInfo stageInfo = vk::PipelineShaderStageCreateInfo()
-            .setModule(*shader.shader)
-            .setStage(vk::ShaderStageFlagBits::eCompute)
-            .setPName("main"); // is this needed?
-        vk::ComputePipelineCreateInfo pipeInfo = vk::ComputePipelineCreateInfo()
-            .setLayout(*layout)
-            .setStage(stageInfo);
-        pipeline = device.createComputePipeline(nullptr, pipeInfo);
+        // create shader pipeline
+        computePipe.init(device);
+        computePipe.cs.write_descriptor(image, 0, 0); // todo: encapsulate this better
     }
     void render(vk::raii::Device& device, Swapchain& swapchain, Queues& queues) {
         FrameData& frame = frames[iFrame++ % frames.size()];
@@ -92,10 +78,7 @@ private:
 
         image.transition_layout_rw(cmd, vk::ImageLayout::eGeneral,
             vk::PipelineStageFlagBits2::eAllCommands, vk::PipelineStageFlagBits2::eComputeShader);
-
-        cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline);
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, *layout, 0, shader.descSets, {});
-        cmd.dispatch(std::ceil(image.extent.width / 16.0f), std::ceil(image.extent.height / 16.0f), 1);
+        computePipe.execute(cmd, std::ceil(image.extent.width / 16.0f), std::ceil(image.extent.height / 16.0f), 1);
     }
 
 private:
@@ -115,7 +98,8 @@ private:
     uint32_t iFrame = 0;
 
     Image image;
-    Shader shader = Shader("gradient.comp");
-    vk::raii::Pipeline pipeline = nullptr;
-    vk::raii::PipelineLayout layout = nullptr;
+    // Shader shader = Shader("gradient.comp");
+    Pipelines::Compute computePipe = {"gradient.comp"};
+    vk::raii::Pipeline pipeline = nullptr; // REMOVE
+    vk::raii::PipelineLayout layout = nullptr; // REMOVE
 };

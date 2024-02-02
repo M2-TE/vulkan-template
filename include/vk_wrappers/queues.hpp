@@ -25,27 +25,7 @@ struct Queue {
         vk::SemaphoreCreateInfo semaInfo = vk::SemaphoreCreateInfo({}, &typeInfo);
         timeline = device.createSemaphore(semaInfo);
     }
-    void cmd_immediate(vk::raii::Device& device, std::function<void(vk::raii::CommandBuffer& cmd)>&& fnc) {
 
-        // record cmd
-        cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-        fnc(cmd);
-        cmd.end();
-
-        // submit cmd
-        uint64_t waitVal = 1;
-        vk::SemaphoreSubmitInfo semaSign(*timeline, waitVal, vk::PipelineStageFlagBits2::eAllCommands);
-        vk::SubmitInfo2 submitInfo = vk::SubmitInfo2().setSignalSemaphoreInfos(semaSign);
-        queue.submit2(submitInfo);
-        vk::SemaphoreWaitInfo semaWait = vk::SemaphoreWaitInfo()
-            .setSemaphores(*timeline)
-            .setValues(waitVal);
-        while(vk::Result::eTimeout == device.waitSemaphores(semaWait, UINT64_MAX)) {}
-        // reset timeline semaphore
-        vk::SemaphoreTypeCreateInfo typeInfo = vk::SemaphoreTypeCreateInfo(vk::SemaphoreType::eTimeline, 0);
-        vk::SemaphoreCreateInfo semaInfo = vk::SemaphoreCreateInfo({}, &typeInfo);
-        timeline = device.createSemaphore(semaInfo);
-    }
 };
 struct Queues {
     void init(vk::raii::Device& device, vkb::Device& deviceVkb);
