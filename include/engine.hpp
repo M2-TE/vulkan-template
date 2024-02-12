@@ -8,6 +8,7 @@
 #include <chrono>
 #include <thread>
 //
+#include "SDL_keycode.h"
 #include "input.hpp"
 #include "window.hpp"
 #include "renderer.hpp"
@@ -69,6 +70,9 @@ private:
     }
     void handle_input() {
         if (Keys::pressed(SDLK_F11)) window.toggle_fullscreen();
+        if (Keys::down(SDLK_LALT) && Keys::pressed(SDLK_RETURN)) window.toggle_fullscreen();
+        if (Keys::down(SDLK_LGUI) && Keys::down(SDLK_LSHIFT) && Keys::pressed(SDLK_UP)) window.toggle_fullscreen();
+        if (Keys::down(SDLK_LALT) && Keys::pressed(SDLK_F4)) bRunning = false;
     }
 
 private:
