@@ -89,12 +89,13 @@ void Swapchain::present(vk::raii::Device& device, Image& image, vk::raii::Semaph
     cmd.pipelineBarrier2(depInfo);
 
     // copy input image to swapchain image
+    vk::ImageBlit2 region = vk::ImageBlit2()
+        .setSrcOffsets({ vk::Offset3D(), vk::Offset3D(image.extent.width, image.extent.height, 1) })
+        .setDstOffsets({ vk::Offset3D(), vk::Offset3D(extent.width, extent.height, 1)})
+        .setSrcSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1))
+        .setDstSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
     vk::BlitImageInfo2 blitInfo = vk::BlitImageInfo2()
-        .setRegions(vk::ImageBlit2()
-            .setSrcOffsets({ vk::Offset3D(), vk::Offset3D(image.extent.width, image.extent.height, 1) })
-            .setDstOffsets({ vk::Offset3D(), vk::Offset3D(extent.width, extent.height, 1)})
-            .setSrcSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1))
-            .setDstSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1)))
+        .setRegions(region)
         .setSrcImage(*image.image)
         .setSrcImageLayout(vk::ImageLayout::eTransferSrcOptimal)
         .setDstImage(images[index])
