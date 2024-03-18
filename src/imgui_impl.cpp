@@ -5,6 +5,7 @@
 #include <SDL3/SDL_events.h>
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_vulkan.h>
+#include <vulkan/vulkan_structs.hpp>
 //
 #include "vk_wrappers/imgui_impl.hpp"
 #include "vk_wrappers/queues.hpp"
@@ -54,8 +55,12 @@ namespace ImGui {
             initInfo.ImageCount = 3;
             initInfo.MinImageCount = initInfo.ImageCount;
             initInfo.UseDynamicRendering = true;
+            initInfo.RenderPass = nullptr;
+            initInfo.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
+                .setColorAttachmentFormats(swapchainFormat);
+            // initInfo.ColorAttachmentFormat = (VkFormat)swapchainFormat;
             initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-            ImGui_ImplVulkan_Init(&initInfo);;
+            ImGui_ImplVulkan_Init(&initInfo);
             ImGui_ImplVulkan_CreateFontsTexture();
         }
         bool process_event(SDL_Event* pEvent) {
