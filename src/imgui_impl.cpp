@@ -54,9 +54,8 @@ namespace ImGui {
             initInfo.ImageCount = 3;
             initInfo.MinImageCount = initInfo.ImageCount;
             initInfo.UseDynamicRendering = true;
-            initInfo.ColorAttachmentFormat = (VkFormat)swapchainFormat;
             initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-            ImGui_ImplVulkan_Init(&initInfo, nullptr);;
+            ImGui_ImplVulkan_Init(&initInfo);;
             ImGui_ImplVulkan_CreateFontsTexture();
         }
         bool process_event(SDL_Event* pEvent) {
