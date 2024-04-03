@@ -120,7 +120,7 @@ target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
     "${vma_hpp_SOURCE_DIR}/include/"
     "${miniaudio_SOURCE_DIR}/extras/miniaudio_split/")
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-    "VULKAN_DEBUG_MSG_UTILS"
+    "VULKAN_DEBUG_MSG_UTILS" # enables vulkan debug layers
     "IMGUI_IMPL_VULKAN_NO_PROTOTYPES"
     "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC"
     "VULKAN_HPP_NO_TO_STRING"
